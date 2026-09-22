@@ -1,0 +1,11 @@
+Vendored front-end libraries (served from this server; no CDNs).
+
+bootstrap 5.3.3  (bootstrap.min.css, bootstrap.bundle.min.js)
+htmx.org 2.0.4   (htmx.min.js)
+fix-webm-duration 1.0.6
+
+SHA-256:
+073254afbfc06331b8b548b7fc0532b4ffe2cfdd588368dcc338e7abd50810e1 *bootstrap.bundle.min.js
+5cc08779083d4a1129f30e66af75e50a29a7b56df0034046d58902e1d6037112 *fix-webm-duration.js
+e209dda5c8235479f3166defc7750e1dbcd5a5c1808b7792fc2e6733768fb447 *htmx.min.js
+26db49828d6701fcfce37a96da6ec3f0ed481abae49c8c9969a575b064413cad *bootstrap.min.css
