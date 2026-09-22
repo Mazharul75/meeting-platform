@@ -1,0 +1,39 @@
+[project]
+name = "meeting-platform"
+version = "0.1.0"
+description = "Company meeting platform: online meetings with built-in recording"
+requires-python = ">=3.12,<3.13"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["app/static", "alembic/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S", "ASYNC"]
+ignore = [
+  "B008",   # FastAPI Depends() in defaults
+  "S101",   # asserts are fine
+  "E501",   # line length is a formatter concern
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106", "S311", "S603"]
+"scripts/**" = ["S105"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = false
+warn_unused_ignores = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+exclude = ["alembic/versions", "tests"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests/unit", "tests/integration"]
+markers = ["e2e: browser tests (need Playwright + Chromium)"]
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv"]

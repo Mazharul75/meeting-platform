@@ -1,0 +1,25 @@
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+dev.db
+*.db
+.dev_storage/
+node_modules/
+test-results/
+playwright-report/
+*.egg-info/
+.DS_Store
+
+# local assistant / project-state files (never commit)
+CLAUDE.md
+.claude/
+_specs/
+*.pdf
+Meeting_Platform_MVP_Build_Plan.pdf
+.shots/
