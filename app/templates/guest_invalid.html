@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% set hide_nav = true %}
+{% block title %}Link not valid{% endblock %}
+{% block content %}
+<div class="text-center py-5">
+  <h1 class="h3">This link cannot be used</h1>
+  <p class="text-secondary">
+    {% if reason == 'not_yet' %}This meeting is not open yet. Please try again closer to the start time.
+    {% else %}The link is not valid, has expired or was cancelled. Please ask the meeting host for a new link.{% endif %}
+  </p>
+</div>
+{% endblock %}

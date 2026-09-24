@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% set hide_nav = true %}
+{% block title %}Join meeting{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-12 col-md-8 col-lg-6">
+  <h1 class="fs-3 mb-1">{{ meeting.title }}</h1>
+  <p class="text-secondary">You were invited as a guest. You will only see this meeting.</p>
+  {% if step == 'consent' %}
+  <div class="card"><div class="card-body">
+    <div class="alert alert-warning" role="note">This meeting may be recorded. While recording, a red “Recording” badge is shown to everyone.</div>
+    <form method="post" action="/join/{{ token }}" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="mb-3">
+        <label class="form-label" for="name">Your name</label>
+        <input class="form-control {{ 'is-invalid' if errors and errors.name }}" id="name" name="name" maxlength="60" required value="{{ name or '' }}">
+        {% if errors and errors.name %}<div class="invalid-feedback">{{ errors.name }}</div>{% endif %}
+      </div>
+      <div class="form-check mb-3">
+        <input class="form-check-input {{ 'is-invalid' if errors and errors.consent }}" type="checkbox" name="consent" value="yes" id="consent" required>
+        <label class="form-check-label" for="consent">I understand this meeting may be recorded.</label>
+        {% if errors and errors.consent %}<div class="invalid-feedback d-block">{{ errors.consent }}</div>{% endif %}
+      </div>
+      <button class="btn btn-primary" type="submit">Continue</button>
+    </form>
+  </div></div>
+  {% else %}
+  <div class="card"><div class="card-body">
+    <p class="mb-3">Thanks, {{ name }}. Check your camera and microphone below.</p>
+    <div class="ratio ratio-16x9 bg-dark rounded overflow-hidden mb-3">
+      <video id="preview" class="preview-video" autoplay muted playsinline aria-label="Camera preview"></video>
+    </div>
+    <div id="lobby-error" class="alert alert-danger d-none" role="alert"></div>
+    <label class="form-label small" for="level">Microphone level</label>
+    <meter id="level" class="level-meter" min="0" max="1" value="0" aria-label="Microphone level"></meter>
+    <div class="row g-2 mt-2">
+      <div class="col-sm-6"><label class="form-label small" for="cam-select">Camera</label><select id="cam-select" class="form-select"></select></div>
+      <div class="col-sm-6"><label class="form-label small" for="mic-select">Microphone</label><select id="mic-select" class="form-select"></select></div>
+    </div>
+    <button id="start-test" class="btn btn-primary mt-3" type="button">Start camera and microphone test</button>
+    <hr>
+    <p class="text-secondary small mb-2">The live room opens in the next build of the platform.</p>
+    <button class="btn btn-secondary" type="button" disabled>Join room (coming next)</button>
+  </div></div>
+  {% endif %}
+</div></div>
+{% endblock %}
+{% block scripts %}{% if step == 'lobby' %}<script type="module" src="/static/js/lobby.js"></script>{% endif %}{% endblock %}

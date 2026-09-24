@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% set nav = "home" %}
+{% block title %}Lobby{% endblock %}
+{% block content %}
+<h1 class="fs-3 mb-1">Lobby</h1>
+<p class="text-secondary">{{ meeting.title }} · check your camera and microphone before you join.</p>
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card"><div class="card-body">
+      <div class="ratio ratio-16x9 bg-dark rounded overflow-hidden mb-3">
+        <video id="preview" class="preview-video" autoplay muted playsinline aria-label="Camera preview"></video>
+      </div>
+      <div id="lobby-error" class="alert alert-danger d-none" role="alert"></div>
+      <label class="form-label small" for="level">Microphone level</label>
+      <meter id="level" class="level-meter" min="0" max="1" value="0" aria-label="Microphone level"></meter>
+      <div class="row g-2 mt-2">
+        <div class="col-sm-6"><label class="form-label small" for="cam-select">Camera</label>
+          <select id="cam-select" class="form-select"></select></div>
+        <div class="col-sm-6"><label class="form-label small" for="mic-select">Microphone</label>
+          <select id="mic-select" class="form-select"></select></div>
+      </div>
+      <button id="start-test" class="btn btn-primary mt-3" type="button">Start camera and microphone test</button>
+    </div></div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card"><div class="card-body">
+      <h2 class="h5">Recording notice</h2>
+      <p class="mb-2">This meeting may be recorded. A red “Recording” badge is shown to everyone while it is.</p>
+      <p class="text-secondary small mb-3">Keep this tab visible during the meeting. Recording and the live room open in the next build of the platform.</p>
+      <button class="btn btn-secondary" type="button" disabled>Join room (coming next)</button>
+    </div></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script type="module" src="/static/js/lobby.js"></script>{% endblock %}
