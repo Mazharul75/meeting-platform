@@ -9,3 +9,7 @@ SHA-256:
 5cc08779083d4a1129f30e66af75e50a29a7b56df0034046d58902e1d6037112 *fix-webm-duration.js
 e209dda5c8235479f3166defc7750e1dbcd5a5c1808b7792fc2e6733768fb447 *htmx.min.js
 26db49828d6701fcfce37a96da6ec3f0ed481abae49c8c9969a575b064413cad *bootstrap.min.css
+
+livekit-client 2.22.3   (livekit-client.umd.js, livekit-client.e2ee.worker.js)
+e3458087dbfa4cacce79502cd6195048dff39a67227cb256b18f05094fec49ba *livekit-client.umd.js
+74fcb3ad72f15ef5eee0184339e8a6267a1e673c1731fa8d2b1128443f6300df *livekit-client.e2ee.worker.js
