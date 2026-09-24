@@ -1,0 +1,21 @@
+{% set badge = {'recording':'danger','uploading':'warning','ready':'success','partial':'warning','failed':'dark'} %}
+{% if recordings %}
+<div class="table-responsive"><table class="table align-middle">
+  <thead><tr><th scope="col">Meeting</th><th scope="col">Recorded</th><th scope="col">Length</th><th scope="col">Size</th><th scope="col">Status</th></tr></thead>
+  <tbody>
+  {% for r in recordings %}
+    <tr>
+      <td><a href="/recordings/{{ r.id }}">{{ r.meeting.title }}</a></td>
+      <td>{{ r.created_at | dt(current_user.timezone, false) }}</td>
+      <td>{{ r.total_duration_ms | duration }}</td>
+      <td>{{ r.total_bytes | filesize }}</td>
+      <td><span class="badge text-bg-{{ badge.get(r.status, 'secondary') }}">{{ r.status }}</span></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+<div class="empty-state card card-body">
+  <p class="mb-0">No recordings yet. Recordings from meetings you host or are invited to will appear here.</p>
+</div>
+{% endif %}

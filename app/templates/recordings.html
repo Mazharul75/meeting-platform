@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% set nav = "recordings" %}
+{% block title %}Recordings{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Recordings</h1></div>
+<div hx-get="/recordings" hx-trigger="every 10s" hx-swap="innerHTML" id="recordings-list">
+  {% include "_recordings_table.html" %}
+</div>
+{% endblock %}
