@@ -8,3 +8,4 @@ pytest-asyncio==1.4.0
 ruff==0.16.8
 playwright==1.63.0
 pyee==13.0.1
+PyJWT==2.15.0

@@ -49,7 +49,7 @@ mypy app scripts
 bandit -q -r app scripts -c pyproject.toml
 pip-audit -r requirements.txt
 pytest tests/unit tests/integration          # backend
-node --test --test-force-exit tests/js/recorder.test.mjs   # recorder engine
+node --test --test-force-exit tests/js/*.mjs   # recorder engine
 pytest tests/e2e                              # real browser (needs Edge, Chrome, or: playwright install chromium)
 ```
 

@@ -25,7 +25,7 @@ jobs:
       - run: bandit -q -r app scripts -c pyproject.toml
       - run: pip-audit -r requirements.txt
       - run: pytest tests/unit tests/integration -q
-      - run: node --test --test-force-exit tests/js/recorder.test.mjs
+      - run: node --test --test-force-exit tests/js/*.mjs
       - name: Browser end-to-end tests
         run: |
           pip install playwright
