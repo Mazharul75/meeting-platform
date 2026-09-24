@@ -16,7 +16,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.config import Settings, get_settings
 from app.deps import AuthRequired, protect
 from app.logging_setup import setup_logging
-from app.routers import admin, auth, dev, guests, health, local_storage, meetings, recordings
+from app.routers import admin, auth, dev, guests, health, livekit, local_storage, meetings, recordings
 from app.security import csrf, sessions
 from app.security.headers import security_headers
 from app.templating import templates
@@ -85,6 +85,7 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(auth.router)
     app.include_router(meetings.router)
+    app.include_router(livekit.router)
     app.include_router(guests.router)
     app.include_router(recordings.router)
     app.include_router(admin.router)

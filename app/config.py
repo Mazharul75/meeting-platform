@@ -79,6 +79,10 @@ class Settings(BaseSettings):
         return _origin(self.supabase_url)
 
     @property
+    def livekit_configured(self) -> bool:
+        return bool(self.livekit_url and self.livekit_api_key and self.livekit_api_secret)
+
+    @property
     def livekit_origins(self) -> list[str]:
         if not self.livekit_url:
             return []

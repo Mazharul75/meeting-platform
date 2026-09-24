@@ -17,12 +17,21 @@ from app.db import get_db
 from app.deps import current_user
 from app.models import GuestInvite, Meeting, MeetingMember, Recording, User
 from app.security import permissions as perm
-from app.services import audit
+from app.services import audit, livekit_tokens, participant_names
 from app.services import meetings as svc
 from app.services.ics import meeting_ics
 from app.templating import templates
 
 router = APIRouter()
+
+
+async def _end_meeting(db: AsyncSession, meeting: Meeting, user: User, request: Request) -> None:
+    """Shared by both end-meeting routes: moves the meeting to 'ended' and closes the LiveKit
+    room so nobody can stay connected (plan Flow B step 6)."""
+    svc.transition(meeting, "ended")
+    await audit.log(db, "meeting.end", actor=user.id, target_type="meeting", target_id=meeting.id, request=request)
+    await livekit_tokens.close_room(get_settings(), str(meeting.room_name))
+    participant_names.forget_room(str(meeting.room_name))
 
 
 def _tz_names() -> list[str]:
@@ -395,10 +404,9 @@ async def meeting_end(
 ) -> Response:
     meeting, _ = await perm.require_meeting_access(db, user, meeting_id, "record")
     try:
-        svc.transition(meeting, "ended")
+        await _end_meeting(db, meeting, user, request)
     except svc.IllegalTransition:
         raise HTTPException(status_code=409, detail="Only a live meeting can be ended.") from None
-    await audit.log(db, "meeting.end", actor=user.id, target_type="meeting", target_id=meeting.id, request=request)
     await db.commit()
     return JSONResponse({"status": "ended"})
 
@@ -412,11 +420,46 @@ async def meeting_end_form(
 ) -> Response:
     meeting, role = await perm.require_meeting_access(db, user, meeting_id, "record")
     try:
-        svc.transition(meeting, "ended")
+        await _end_meeting(db, meeting, user, request)
     except svc.IllegalTransition:
         return await _detail_page(
             request, db, user, meeting, role, status=409, error="Only a live meeting can be ended."
         )
-    await audit.log(db, "meeting.end", actor=user.id, target_type="meeting", target_id=meeting.id, request=request)
     await db.commit()
     return RedirectResponse(f"/meetings/{meeting.id}", status_code=303)
+
+
+@router.get("/meetings/{meeting_id}/room", response_model=None)
+async def meeting_room(
+    request: Request,
+    meeting_id: uuid.UUID,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    meeting, role = await perm.require_meeting_access(db, user, meeting_id, "join_room")
+    if meeting.status not in ("scheduled", "live") or meeting.mode != "online":
+        raise perm.not_found()
+    if not get_settings().livekit_configured:
+        return templates.TemplateResponse(
+            request, "errors/error.html",
+            {"status": 503, "title": "Video is not set up yet",
+             "message": "The administrator has not configured the online video service yet."},
+            status_code=503,
+        )
+    return templates.TemplateResponse(
+        request,
+        "room_online.html",
+        {
+            "meeting": meeting,
+            "is_host": role == "host",
+            "can_record": perm.is_allowed(role, "record"),
+            "can_end": perm.is_allowed(role, "record"),
+            "room_config": {
+                "meetingId": str(meeting.id),
+                "tokenUrl": f"/api/meetings/{meeting.id}/livekit-token",
+                "participantsUrl": f"/api/meetings/{meeting.id}/participants",
+                "endUrl": f"/api/meetings/{meeting.id}/end",
+                "isHost": role == "host",
+            },
+        },
+    )
