@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% set nav = "recordings" %}
+{% block title %}Recording{% endblock %}
+{% block content %}
+{% set tz = current_user.timezone %}
+<nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="/recordings">Recordings</a></li><li class="breadcrumb-item active" aria-current="page">{{ meeting.title }}</li></ol></nav>
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+  <div>
+    <h1 class="fs-3 mb-1">{{ meeting.title }}</h1>
+    <div class="text-secondary">{{ recording.created_at | dt(tz) }} · {{ recording.total_duration_ms | duration }} · {{ recording.total_bytes | filesize }}</div>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <span class="badge text-bg-{{ {'recording':'danger','uploading':'warning','ready':'success','partial':'warning','failed':'dark'}.get(recording.status,'secondary') }}">{{ recording.status }}</span>
+    {% if can_delete %}
+    <button class="btn btn-outline-danger btn-sm" hx-delete="/recordings/{{ recording.id }}" hx-confirm="Delete this recording permanently? This cannot be undone." hx-swap="none">Delete</button>
+    {% endif %}
+  </div>
+</div>
+
+{% if recording.status == 'partial' %}
+<div class="alert alert-warning" role="alert">Some parts are missing{% if missing %} (part {{ missing | join(', ') }}){% endif %}. The parts that arrived are played below.</div>
+{% elif recording.status == 'failed' %}
+<div class="alert alert-secondary" role="status">Nothing was recorded.</div>
+{% elif recording.status in ['recording', 'uploading'] %}
+<div class="alert alert-info" role="status">This recording is still being saved. Refresh in a moment.</div>
+{% endif %}
+
+{% if links %}
+<div class="card mb-4"><div class="card-body">
+  <div class="ratio ratio-16x9 bg-dark rounded overflow-hidden">
+    <video id="player" controls playsinline preload="metadata" aria-label="Recording player"></video>
+  </div>
+  <div id="player-status" class="small text-secondary mt-2" aria-live="polite"></div>
+</div></div>
+<div class="card"><div class="card-body">
+  <h2 class="h5">Parts</h2>
+  <ol class="list-group list-group-numbered" id="part-list">
+    {% for l in links %}
+    <li class="list-group-item d-flex justify-content-between align-items-center" data-part="{{ l.n }}">
+      <span>Part {{ l.n }} · {{ l.duration_ms | duration }} · {{ l.size | filesize }}</span>
+      <span class="d-flex gap-2">
+        <button class="btn btn-sm btn-outline-primary" type="button" data-play="{{ l.n }}">Play</button>
+        {% if can_download %}<a class="btn btn-sm btn-outline-secondary" href="/recordings/{{ recording.id }}/parts/{{ l.n }}/download">Download</a>{% endif %}
+      </span>
+    </li>
+    {% endfor %}
+  </ol>
+</div></div>
+<script type="application/json" id="player-config">{{ player_config | tojson }}</script>
+{% elif recording.status not in ['recording', 'uploading', 'failed'] %}
+<div class="empty-state card card-body"><p class="mb-0">There is nothing to play for this recording.</p></div>
+{% endif %}
+{% endblock %}
+{% block scripts %}{% if links %}<script type="module" src="/static/js/player.js"></script>{% endif %}{% endblock %}
