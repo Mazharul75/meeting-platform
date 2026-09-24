@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% set hide_nav = not current_user %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="text-center py-5">
+  <p class="display-6 text-secondary mb-2">{{ status }}</p>
+  <h1 class="h3">{{ title }}</h1>
+  <p class="text-secondary">{{ message }}</p>
+  <a class="btn btn-primary" href="/">Go to the start page</a>
+</div>
+{% endblock %}

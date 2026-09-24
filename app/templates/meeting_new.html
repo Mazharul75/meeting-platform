@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% set nav = "schedule" %}
+{% block title %}Schedule meeting{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Schedule a meeting</h1></div>
+<form method="post" action="/meetings/new" class="card form-narrow" novalidate><div class="card-body">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <div class="mb-3">
+    <label class="form-label" for="title">Title</label>
+    <input class="form-control {{ 'is-invalid' if errors.title }}" id="title" name="title" maxlength="200" required value="{{ values.title or '' }}">
+    {% if errors.title %}<div class="invalid-feedback">{{ errors.title }}</div>{% endif %}
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="description">Description (optional)</label>
+    <textarea class="form-control {{ 'is-invalid' if errors.description }}" id="description" name="description" rows="3" maxlength="2000">{{ values.description or '' }}</textarea>
+    {% if errors.description %}<div class="invalid-feedback">{{ errors.description }}</div>{% endif %}
+  </div>
+  <input type="hidden" name="mode" value="online">
+  <div class="mb-3"><span class="form-label d-block">Type</span>
+    <span class="badge text-bg-primary">Online meeting</span>
+    <div class="form-text">Everyone joins from their own device. In-person meetings are coming later.</div>
+    {% if errors.mode %}<div class="text-danger small">{{ errors.mode }}</div>{% endif %}
+  </div>
+  <div class="row g-3 mb-3">
+    <div class="col-md-5">
+      <label class="form-label" for="start">Start</label>
+      <input class="form-control {{ 'is-invalid' if errors.start }}" id="start" name="start" type="datetime-local" required value="{{ values.start or '' }}">
+      {% if errors.start %}<div class="invalid-feedback">{{ errors.start }}</div>{% endif %}
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="duration">Duration (minutes)</label>
+      <input class="form-control {{ 'is-invalid' if errors.duration }}" id="duration" name="duration" type="number" min="5" max="480" step="5" required value="{{ values.duration }}">
+      {% if errors.duration %}<div class="invalid-feedback">{{ errors.duration }}</div>{% endif %}
+    </div>
+    <div class="col-md-4">
+      <label class="form-label" for="timezone">Time zone</label>
+      <input class="form-control {{ 'is-invalid' if errors.timezone }}" id="timezone" name="timezone" list="tzlist" required value="{{ values.timezone }}">
+      <datalist id="tzlist">{% for tz in timezones %}<option value="{{ tz }}">{% endfor %}</datalist>
+      {% if errors.timezone %}<div class="invalid-feedback">{{ errors.timezone }}</div>{% endif %}
+    </div>
+  </div>
+  <fieldset class="mb-3">
+    <legend class="form-label fs-6">Invite staff</legend>
+    {% if staff %}
+    <div class="row row-cols-1 row-cols-md-2 g-2">
+      {% for s in staff %}
+      <div class="col"><div class="form-check">
+        <input class="form-check-input" type="checkbox" name="user_ids" value="{{ s.id }}" id="u{{ loop.index }}" {{ 'checked' if s.id|string in values.invited }}>
+        <label class="form-check-label" for="u{{ loop.index }}">{{ s.display_name }}</label>
+      </div></div>
+      {% endfor %}
+    </div>
+    {% else %}<p class="text-secondary mb-0">There are no other staff accounts yet.</p>{% endif %}
+    {% if errors.invited %}<div class="text-danger small">{{ errors.invited }}</div>{% endif %}
+  </fieldset>
+  <button class="btn btn-primary" type="submit">Schedule meeting</button>
+  <a class="btn btn-link" href="/">Cancel</a>
+</div></form>
+{% endblock %}
