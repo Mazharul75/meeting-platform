@@ -38,8 +38,7 @@
     </div>
     <button id="start-test" class="btn btn-primary mt-3" type="button">Start camera and microphone test</button>
     <hr>
-    <p class="text-secondary small mb-2">The live room opens in the next build of the platform.</p>
-    <button class="btn btn-secondary" type="button" disabled>Join room (coming next)</button>
+    <a class="btn btn-primary" href="/join/{{ token }}/room?name={{ name | urlencode }}">Join room</a>
   </div></div>
   {% endif %}
 </div></div>
