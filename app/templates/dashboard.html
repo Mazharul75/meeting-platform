@@ -4,69 +4,61 @@
 {% block content %}
 <div class="page-head">
   <div>
-    <h1>Hello, {{ current_user.display_name.split(' ')[0] }}</h1>
-    <p>Here is what is coming up and what was recorded recently.</p>
+    <h1>Dashboard</h1>
+    <p>Welcome back, {{ current_user.display_name }}.</p>
   </div>
-  <a class="btn btn-primary" href="/meetings/new">Schedule meeting</a>
+  <a class="btn btn-primary ticks" href="/meetings/new"><svg class="icon"><use href="#i-cal"/></svg>Schedule meeting</a>
 </div>
-
-<div class="row g-3 mb-4">
-  <div class="col-sm-6 col-xl-4"><div class="card"><div class="card-body stat">
-    <span class="stat-icon"><svg class="icon"><use href="#i-cal"/></svg></span>
-    <div><div class="stat-value">{{ upcoming | length }}</div><div class="stat-label">Upcoming meetings</div></div>
-  </div></div></div>
-  <div class="col-sm-6 col-xl-4"><div class="card"><div class="card-body stat">
-    <span class="stat-icon ok"><svg class="icon"><use href="#i-video"/></svg></span>
-    <div><div class="stat-value">{{ recent | length }}</div><div class="stat-label">Recent recordings</div></div>
-  </div></div></div>
-  <div class="col-sm-12 col-xl-4"><div class="card"><div class="card-body">
-    <div class="d-flex justify-content-between mb-2"><strong>Storage</strong><span class="text-secondary small">{{ percent }}% used</span></div>
-    <progress class="storage-meter {{ 'is-danger' if percent >= 90 else 'is-warn' if percent >= 70 else '' }}" value="{{ percent }}" max="100" aria-label="Storage used">{{ percent }}%</progress>
-    <div class="small text-secondary">{{ used | filesize }} of {{ quota | filesize }}</div>
-  </div></div></div>
-</div>
-{% if percent >= 90 %}<div class="alert alert-danger">Storage is almost full. Delete old test recordings.</div>
-{% elif percent >= 70 %}<div class="alert alert-warning">Storage is over 70% full.</div>{% endif %}
 
 <div class="row g-4">
-  <div class="col-lg-7">
-    <div class="card"><div class="card-body">
-      <h2>Upcoming meetings</h2>
-      {% if upcoming %}
-      {% for m in upcoming %}
-      {% set d = m.scheduled_start | dt(current_user.timezone, false) %}
-      <div class="meeting-row">
-        <div class="date-chip"><div class="d">{{ d.split(' ')[1] }}</div><div class="m">{{ d.split(' ')[2] }}</div></div>
-        <div class="flex-grow-1">
-          <a class="meeting-title" href="/meetings/{{ m.id }}">{{ m.title }}</a>
-          <div class="meeting-meta">{{ d.split(', ')[1] }} · Online · {{ m.host.display_name }}</div>
+  <div class="col-lg-8">
+    <span class="section-label">Meetings</span>
+    {% if upcoming %}
+    {% for m in upcoming %}
+    <div class="card ticks mb-3"><div class="card-body py-3">
+      <div class="d-flex justify-content-between align-items-start gap-3">
+        <div>
+          <span class="eyebrow"><svg class="icon"><use href="{{ '#i-video' if m.mode == 'online' else '#i-users' }}"/></svg>{{ 'Online' if m.mode == 'online' else 'In-person' }}</span>
+          <a class="meeting-title fs-5 d-block" href="/meetings/{{ m.id }}">{{ m.title }}</a>
+          <div class="meeting-meta mt-1"><svg class="icon"><use href="#i-clock"/></svg>{{ m.scheduled_start | dt(current_user.timezone, false) }} – {{ m.scheduled_end | dt(current_user.timezone, false) }} · {{ m.timezone }}</div>
+          <div class="meeting-meta"><svg class="icon"><use href="#i-user"/></svg>Host: {{ m.host.display_name }}{% if m.members|length > 1 %} · Invited: {% for mem in m.members if mem.user_id != m.host_id %}{{ mem.user.display_name }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</div>
         </div>
-        <span class="badge text-bg-{{ 'danger' if m.status == 'live' else 'primary' }}">{{ 'Live now' if m.status == 'live' else 'Scheduled' }}</span>
+        <span class="pill {{ 'pill-live' if m.status == 'live' else 'pill-scheduled' }} flex-shrink-0">{{ 'Live now' if m.status == 'live' else 'Scheduled' }}</span>
       </div>
-      {% endfor %}
-      {% else %}
-      <div class="empty-state">
-        <p class="mb-3">No upcoming meetings yet.</p>
-        <a class="btn btn-outline-primary" href="/meetings/new">Schedule your first meeting</a>
-      </div>
-      {% endif %}
     </div></div>
+    {% endfor %}
+    {% else %}
+    <div class="card ticks"><div class="card-body">
+      <div class="empty-state">
+        <svg class="icon icon-lg"><use href="#i-cal"/></svg>
+        <p class="mb-3">No upcoming meetings yet.</p>
+        <a class="btn btn-outline-primary" href="/meetings/new"><svg class="icon"><use href="#i-cal"/></svg>Schedule your first meeting</a>
+      </div>
+    </div></div>
+    {% endif %}
   </div>
-  <div class="col-lg-5">
-    <div class="card"><div class="card-body">
-      <h2>Recent recordings</h2>
+  <div class="col-lg-4">
+    <div class="card ticks mb-4"><div class="card-body">
+      <h2><svg class="icon"><use href="#i-disk"/></svg>Storage</h2>
+      <div class="d-flex justify-content-between mb-1 small text-secondary"><span>{{ used | filesize }} used</span><span>{{ percent }}%</span></div>
+      <progress class="storage-meter {{ 'is-danger' if percent >= 90 else 'is-warn' if percent >= 70 else '' }}" value="{{ percent }}" max="100" aria-label="Storage used">{{ percent }}%</progress>
+      <div class="small text-secondary">of {{ quota | filesize }} free plan</div>
+      {% if percent >= 90 %}<div class="alert alert-danger mt-2 mb-0 py-2">Storage is almost full. Delete old test recordings.</div>
+      {% elif percent >= 70 %}<div class="alert alert-warning mt-2 mb-0 py-2">Storage is over 70% full.</div>{% endif %}
+    </div></div>
+    <div class="card ticks"><div class="card-body">
+      <h2><svg class="icon"><use href="#i-video"/></svg>Recent recordings</h2>
       {% if recent %}
       {% for r in recent %}
       <div class="meeting-row">
-        <span class="stat-icon"><svg class="icon"><use href="#i-video"/></svg></span>
         <div class="flex-grow-1">
           <a class="meeting-title" href="/recordings/{{ r.id }}">{{ r.meeting.title }}</a>
-          <div class="meeting-meta">{{ r.created_at | dt(current_user.timezone, false) }}</div>
+          <div class="meeting-meta"><svg class="icon"><use href="#i-clock"/></svg>{{ r.created_at | dt(current_user.timezone, false) }}</div>
         </div>
-        <span class="badge text-bg-{{ 'success' if r.status == 'ready' else 'warning' }}">{{ r.status }}</span>
+        <span class="pill {{ 'pill-ready' if r.status == 'ready' else 'pill-uploading' }}">{{ r.status }}</span>
       </div>
       {% endfor %}
-      <a class="d-inline-block mt-3" href="/recordings">See all recordings</a>
+      <a class="d-inline-flex align-items-center mt-3 fw-semibold" href="/recordings">See all recordings<svg class="icon icon-end"><use href="#i-arrow"/></svg></a>
       {% else %}
       <div class="empty-state"><p class="mb-0">Recordings appear here after a meeting is recorded.</p></div>
       {% endif %}

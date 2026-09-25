@@ -2,39 +2,24 @@
 {% set hide_nav = true %}
 {% block title %}Log in{% endblock %}
 {% block bare %}
-<div class="auth">
-  <section class="auth-art" aria-hidden="true">
-    <div class="brand text-white"><span class="brand-mark"><svg class="icon"><use href="#i-video"/></svg></span>Company Meetings</div>
-    <div>
-      <h2>Every meeting, recorded and kept safe in one place.</h2>
-      <p>Hold online meetings with your team and clients, and find the recording afterwards without chasing anyone.</p>
-      <ul class="auth-points">
-        <li><span class="dot"><svg class="icon"><use href="#i-shield"/></svg></span>Only invited people can open a recording</li>
-        <li><span class="dot"><svg class="icon"><use href="#i-lock"/></svg></span>Private storage and expiring links</li>
-        <li><span class="dot"><svg class="icon"><use href="#i-cal"/></svg></span>Schedule once, add to any calendar</li>
-      </ul>
-    </div>
-    <small>Private company platform</small>
-  </section>
-  <main id="main" class="auth-form">
-    <div class="auth-card">
-      <h1 class="mb-1">Welcome back</h1>
-      <p class="text-secondary mb-4">Sign in with the account your administrator created.</p>
-      {% if error %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endif %}
-      <form method="post" action="/login" novalidate>
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <div class="mb-3">
-          <label class="form-label" for="email">Email</label>
-          <input class="form-control" id="email" name="email" type="email" autocomplete="username" required autofocus maxlength="254" placeholder="you@company.com">
-        </div>
-        <div class="mb-4">
-          <label class="form-label" for="password">Password</label>
-          <input class="form-control" id="password" name="password" type="password" autocomplete="current-password" required maxlength="500">
-        </div>
-        <button class="btn btn-primary btn-lg w-100" type="submit">Log in</button>
-      </form>
-      <p class="text-secondary small text-center mt-4 mb-0">Need an account? Ask your administrator.</p>
-    </div>
-  </main>
+<div class="auth-shell">
+  <div class="card auth-card ticks">
+    <div class="brand"><svg class="icon brand-mark"><use href="#i-logo"/></svg>CSoft&nbsp;<span class="hi">Meetings</span></div>
+    <p class="tagline">Private meeting platform for CSoft staff.</p>
+    {% if error %}<div class="alert alert-danger text-start" role="alert">{{ error }}</div>{% endif %}
+    <form method="post" action="/login" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="mb-3">
+        <label class="form-label" for="email"><svg class="icon"><use href="#i-user"/></svg>Email</label>
+        <input class="form-control" id="email" name="email" type="email" autocomplete="username" required autofocus maxlength="254">
+      </div>
+      <div class="mb-3">
+        <label class="form-label" for="password"><svg class="icon"><use href="#i-key"/></svg>Password</label>
+        <input class="form-control" id="password" name="password" type="password" autocomplete="current-password" required maxlength="500">
+      </div>
+      <button class="btn btn-primary ticks w-100" type="submit">Sign in<svg class="icon icon-end"><use href="#i-arrow"/></svg></button>
+    </form>
+    <p class="auth-foot">Invite-only — accounts are created by an administrator.</p>
+  </div>
 </div>
 {% endblock %}

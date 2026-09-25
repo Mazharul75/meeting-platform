@@ -3,28 +3,29 @@
 {% block title %}{{ meeting.title }}{% endblock %}
 {% block content %}
 {% set tz = current_user.timezone %}
+<a class="crumb" href="/"><svg class="icon"><use href="#i-back"/></svg>Dashboard</a>
 {% if error %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endif %}
-<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
   <div>
-    <h1 class="fs-3 mb-1">{{ meeting.title }}</h1>
-    <span class="badge text-bg-{{ {'live':'danger','scheduled':'primary','ended':'secondary','cancelled':'dark'}[meeting.status] }}">{{ meeting.status }}</span>
-    <span class="badge text-bg-light border">Online</span>
+    <span class="eyebrow"><svg class="icon"><use href="{{ '#i-video' if meeting.mode == 'online' else '#i-users' }}"/></svg>{{ 'Online meeting' if meeting.mode == 'online' else 'In-person meeting' }}</span>
+    <h1 class="mb-0">{{ meeting.title }}</h1>
   </div>
-  <div class="d-flex flex-wrap gap-2">
+  <div class="d-flex flex-wrap align-items-center gap-2">
+    <span class="pill {{ 'pill-live' if meeting.status == 'live' else 'pill-scheduled' if meeting.status == 'scheduled' else 'pill-deactivated' }}">{{ {'live':'Live now','scheduled':'Scheduled','ended':'Ended','cancelled':'Cancelled'}[meeting.status] }}</span>
     {% if can.join_room and meeting.status in ['scheduled','live'] %}
-    <a class="btn btn-primary" href="/meetings/{{ meeting.id }}/lobby">Open lobby</a>
+    <a class="btn btn-primary ticks" href="/meetings/{{ meeting.id }}/lobby"><svg class="icon"><use href="#i-video"/></svg>Join meeting</a>
     {% endif %}
-    <a class="btn btn-outline-secondary" href="/meetings/{{ meeting.id }}/calendar.ics">Add to calendar (.ics)</a>
+    <a class="btn btn-outline-secondary" href="/meetings/{{ meeting.id }}/calendar.ics"><svg class="icon"><use href="#i-cal"/></svg>Add to calendar</a>
     {% if can.edit_meeting and meeting.status == 'scheduled' %}
     <form method="post" action="/meetings/{{ meeting.id }}/cancel" class="m-0">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <button class="btn btn-outline-danger" type="submit">Cancel meeting</button>
+      <button class="btn btn-outline-danger" type="submit"><svg class="icon"><use href="#i-x"/></svg>Cancel meeting</button>
     </form>
     {% endif %}
     {% if can.record and meeting.status == 'live' %}
     <form method="post" action="/meetings/{{ meeting.id }}/end" class="m-0">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <button class="btn btn-danger" type="submit">End meeting</button>
+      <button class="btn btn-danger" type="submit"><svg class="icon"><use href="#i-phone-off"/></svg>End meeting</button>
     </form>
     {% endif %}
   </div>
@@ -32,28 +33,50 @@
 
 <div class="row g-4">
   <div class="col-lg-7">
-    <div class="card mb-4"><div class="card-body">
-      <h2 class="h5">Details</h2>
-      <dl class="row mb-0">
-        <dt class="col-sm-4">When (your time)</dt><dd class="col-sm-8">{{ meeting.scheduled_start | dt(tz) }} – {{ meeting.scheduled_end | dt(tz, false) }}</dd>
-        {% if meeting.timezone != tz %}
-        <dt class="col-sm-4">In {{ meeting.timezone }}</dt><dd class="col-sm-8">{{ meeting.scheduled_start | dt(meeting.timezone, false) }}</dd>
+    <div class="card ticks mb-4"><div class="card-body">
+      <div class="row g-4">
+        <div class="col-sm-6">
+          <div class="form-label mb-1"><svg class="icon"><use href="#i-cal"/></svg>Date &amp; time</div>
+          <div class="field-value">{{ meeting.scheduled_start | dt(tz, false) }} – {{ meeting.scheduled_end | dt(tz, false) }}</div>
+        </div>
+        <div class="col-sm-6">
+          <div class="form-label mb-1"><svg class="icon"><use href="#i-globe"/></svg>Time zone</div>
+          <div class="field-value">{{ tz }}</div>
+        </div>
+        <div class="col-sm-6">
+          <div class="form-label mb-1"><svg class="icon"><use href="#i-user"/></svg>Host</div>
+          <div class="field-value">{{ meeting.host.display_name }}</div>
+        </div>
+        <div class="col-sm-6">
+          <div class="form-label mb-1"><svg class="icon"><use href="#i-mode"/></svg>Mode</div>
+          <div class="field-value">{{ 'Online' if meeting.mode == 'online' else 'In-person' }}</div>
+        </div>
+        {% if meeting.description %}
+        <div class="col-12">
+          <div class="form-label mb-1">Description</div>
+          <div>{{ meeting.description }}</div>
+        </div>
         {% endif %}
-        <dt class="col-sm-4">Host</dt><dd class="col-sm-8">{{ meeting.host.display_name }}</dd>
-        <dt class="col-sm-4">Invited</dt>
-        <dd class="col-sm-8">{% for m in meeting.members if m.user_id != meeting.host_id %}{{ m.user.display_name }}{% if not loop.last %}, {% endif %}{% else %}<span class="text-secondary">Nobody else yet</span>{% endfor %}</dd>
-        {% if meeting.description %}<dt class="col-sm-4">Description</dt><dd class="col-sm-8">{{ meeting.description }}</dd>{% endif %}
-      </dl>
+      </div>
+      {% if meeting.members|length > 1 %}
+      <hr class="my-4">
+      <div class="form-label mb-2"><svg class="icon"><use href="#i-users"/></svg>Invited staff</div>
+      <div class="d-flex flex-wrap gap-2">
+        {% for m in meeting.members if m.user_id != meeting.host_id %}
+        <span class="badge text-bg-secondary">{{ m.user.display_name }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
     </div></div>
 
-    <div class="card"><div class="card-body">
-      <h2 class="h5">Recordings</h2>
+    <div class="card ticks"><div class="card-body">
+      <h2><svg class="icon"><use href="#i-video"/></svg>Recordings</h2>
       {% if recordings %}
       <ul class="list-group list-group-flush">
         {% for r in recordings %}
         <li class="list-group-item px-0 d-flex justify-content-between">
           <a href="/recordings/{{ r.id }}">{{ r.created_at | dt(tz, false) }}</a>
-          <span class="badge text-bg-secondary">{{ r.status }}</span>
+          <span class="pill pill-{{ r.status }}">{{ r.status }}</span>
         </li>
         {% endfor %}
       </ul>
@@ -63,35 +86,36 @@
 
   <div class="col-lg-5">
     {% if can.edit_meeting and meeting.status in ['scheduled','live'] and uninvited_staff %}
-    <div class="card mb-4"><div class="card-body">
-      <h2 class="h5">Invite more staff</h2>
+    <div class="card ticks mb-4"><div class="card-body">
+      <h2><svg class="icon"><use href="#i-users"/></svg>Invite more staff</h2>
       <form method="post" action="/meetings/{{ meeting.id }}/invite">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         {% for s in uninvited_staff %}
         <div class="form-check"><input class="form-check-input" type="checkbox" name="user_ids" value="{{ s.id }}" id="inv{{ loop.index }}">
           <label class="form-check-label" for="inv{{ loop.index }}">{{ s.display_name }}</label></div>
         {% endfor %}
-        <button class="btn btn-outline-primary btn-sm mt-2" type="submit">Invite selected</button>
+        <button class="btn btn-outline-primary btn-sm mt-2" type="submit"><svg class="icon"><use href="#i-plus"/></svg>Invite selected</button>
       </form>
     </div></div>
     {% endif %}
 
     {% if can.manage_guest_links %}
-    <div class="card"><div class="card-body">
-      <h2 class="h5">Guest links</h2>
-      <p class="text-secondary small">For outside clients. A link works from 30 minutes before the start until 4 hours after the end and can be revoked.</p>
+    <div class="card ticks"><div class="card-body">
+      <span class="eyebrow"><svg class="icon"><use href="#i-link"/></svg>Guest access</span>
+      <h2 class="mt-1">External guests</h2>
+      <p class="text-secondary small">A link works from 30 minutes before the start until 4 hours after the end, and can be revoked at any time.</p>
       {% if new_link %}
       <div class="alert alert-warning" role="alert">
-        <strong>Copy this link now. It is shown only once.</strong>
+        <strong>Copy this link now — it is shown only once.</strong>
         <input class="form-control mt-2" readonly value="{{ new_link }}" aria-label="Guest link">
       </div>
       {% endif %}
       {% if meeting.status in ['scheduled','live'] %}
-      <form method="post" action="/meetings/{{ meeting.id }}/guest-links" class="row g-2 mb-3">
+      <form method="post" action="/meetings/{{ meeting.id }}/guest-links" class="d-flex gap-2 mb-3">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <div class="col"><label class="visually-hidden" for="label">Label</label>
-          <input class="form-control" id="label" name="label" maxlength="100" placeholder="Label (e.g. client name)"></div>
-        <div class="col-auto"><button class="btn btn-outline-primary" type="submit">Create link</button></div>
+        <label class="visually-hidden" for="label">Label</label>
+        <input class="form-control" id="label" name="label" maxlength="100" placeholder="Label (e.g. client name)">
+        <button class="btn btn-outline-primary flex-shrink-0" type="submit"><svg class="icon"><use href="#i-link"/></svg>Create link</button>
       </form>
       {% endif %}
       {% if invites %}
@@ -102,9 +126,9 @@
           <div>{{ i.label or 'Guest link' }}
             <div class="small text-secondary">Opened {{ i.use_count }}×</div></div>
           <div class="d-flex align-items-center gap-2">
-            <span class="badge text-bg-{{ 'success' if state == 'ok' else 'secondary' }}">{{ state|replace('_',' ') }}</span>
+            <span class="pill {{ 'pill-live' if state == 'ok' else 'pill-deactivated' }}">{{ state|replace('_',' ') }}</span>
             {% if not i.revoked_at %}
-            <button class="btn btn-sm btn-outline-danger" hx-delete="/meetings/{{ meeting.id }}/guest-links/{{ i.id }}" hx-confirm="Revoke this link? Nobody will be able to use it." hx-swap="none">Revoke</button>
+            <button class="btn btn-sm btn-outline-danger" hx-delete="/meetings/{{ meeting.id }}/guest-links/{{ i.id }}" hx-confirm="Revoke this link? Nobody will be able to use it." hx-swap="none"><svg class="icon"><use href="#i-trash"/></svg>Revoke</button>
             {% endif %}
           </div>
         </li>
