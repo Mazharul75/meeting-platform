@@ -1,29 +1,29 @@
 {% extends "base.html" %}
 {% set nav = "users" %}
-{% block title %}Users{% endblock %}
+{% block title %}Staff accounts{% endblock %}
 {% block content %}
-<div class="page-head"><h1>Staff accounts</h1></div>
+<div class="page-head"><h1><svg class="icon"><use href="#i-shield"/></svg>Staff accounts</h1></div>
 {% if errors.general %}<div class="alert alert-danger" role="alert">{{ errors.general }}</div>{% endif %}
 <div class="row g-4">
   <div class="col-lg-8">
-    <div class="card"><div class="card-body">
+    <div class="card ticks"><div class="card-body">
       <div class="table-responsive"><table class="table align-middle mb-0">
         <thead><tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Role</th><th scope="col">Status</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
         <tbody>
         {% for u in users %}
           <tr>
-            <td>{{ u.display_name }}</td>
-            <td class="text-break">{{ u.email }}</td>
-            <td>{{ u.role }}</td>
-            <td>{% if u.is_active %}<span class="badge text-bg-success">active</span>{% else %}<span class="badge text-bg-secondary">deactivated</span>{% endif %}
-                {% if u.locked_until and u.locked_until > now_utc %}<span class="badge text-bg-warning">locked</span>{% endif %}</td>
+            <td><svg class="icon"><use href="#i-user"/></svg>{{ u.display_name }}</td>
+            <td class="text-break text-secondary">{{ u.email }}</td>
+            <td>{% if u.role == 'admin' %}<span class="pill pill-admin">Admin</span>{% else %}<span class="text-secondary">Member</span>{% endif %}</td>
+            <td>{% if u.is_active %}<span class="pill pill-active">Active</span>{% else %}<span class="pill pill-deactivated">Deactivated</span>{% endif %}
+                {% if u.locked_until and u.locked_until > now_utc %}<span class="badge text-bg-warning ms-1"><svg class="icon icon-xs"><use href="#i-key"/></svg>Locked</span>{% endif %}</td>
             <td class="text-end">
               <form method="post" action="/admin/users/{{ u.id }}/{{ 'deactivate' if u.is_active else 'activate' }}" class="d-inline">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <button class="btn btn-sm btn-outline-{{ 'danger' if u.is_active else 'success' }}" type="submit">{{ 'Deactivate' if u.is_active else 'Activate' }}</button>
+                <button class="btn btn-sm btn-outline-{{ 'danger' if u.is_active else 'success' }}" type="submit">{% if u.is_active %}<svg class="icon"><use href="#i-x"/></svg>Deactivate{% else %}<svg class="icon"><use href="#i-plus"/></svg>Activate{% endif %}</button>
               </form>
               <details class="d-inline-block ms-1">
-                <summary class="btn btn-sm btn-outline-secondary">Reset password</summary>
+                <summary class="btn btn-sm btn-outline-secondary"><svg class="icon"><use href="#i-key"/></svg>Reset password</summary>
                 <form method="post" action="/admin/users/{{ u.id }}/reset-password" class="mt-2 text-start">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                   <label class="form-label small" for="pw-{{ u.id }}">New password (min 12 characters)</label>
@@ -39,25 +39,25 @@
     </div></div>
   </div>
   <div class="col-lg-4">
-    <div class="card"><div class="card-body">
-      <h2 class="h5">Create account</h2>
+    <div class="card ticks"><div class="card-body">
+      <h2><svg class="icon"><use href="#i-plus"/></svg>Add staff</h2>
       <form method="post" action="/admin/users" novalidate>
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <div class="mb-2"><label class="form-label" for="display_name">Name</label>
+        <div class="mb-2"><label class="form-label" for="display_name"><svg class="icon"><use href="#i-user"/></svg>Name</label>
           <input class="form-control {{ 'is-invalid' if errors.display_name }}" id="display_name" name="display_name" maxlength="100" required>
           {% if errors.display_name %}<div class="invalid-feedback">{{ errors.display_name }}</div>{% endif %}</div>
         <div class="mb-2"><label class="form-label" for="email">Email</label>
           <input class="form-control {{ 'is-invalid' if errors.email }}" id="email" name="email" type="email" maxlength="254" required>
           {% if errors.email %}<div class="invalid-feedback">{{ errors.email }}</div>{% endif %}</div>
-        <div class="mb-2"><label class="form-label" for="password">Password (min 12 characters)</label>
+        <div class="mb-2"><label class="form-label" for="password"><svg class="icon"><use href="#i-key"/></svg>Password (min 12 characters)</label>
           <input class="form-control {{ 'is-invalid' if errors.password }}" id="password" name="password" type="password" minlength="12" autocomplete="new-password" required>
           {% if errors.password %}<div class="invalid-feedback">{{ errors.password }}</div>{% endif %}</div>
-        <div class="mb-2"><label class="form-label" for="role">Role</label>
+        <div class="mb-2"><label class="form-label" for="role"><svg class="icon"><use href="#i-shield"/></svg>Role</label>
           <select class="form-select" id="role" name="role"><option value="member">Member</option><option value="admin">Admin</option></select></div>
-        <div class="mb-3"><label class="form-label" for="timezone">Time zone</label>
+        <div class="mb-3"><label class="form-label" for="timezone"><svg class="icon"><use href="#i-globe"/></svg>Time zone</label>
           <input class="form-control {{ 'is-invalid' if errors.timezone }}" id="timezone" name="timezone" value="{{ default_tz }}">
           {% if errors.timezone %}<div class="invalid-feedback">{{ errors.timezone }}</div>{% endif %}</div>
-        <button class="btn btn-primary w-100" type="submit">Create account</button>
+        <button class="btn btn-primary ticks w-100" type="submit"><svg class="icon"><use href="#i-plus"/></svg>Add staff</button>
       </form>
     </div></div>
   </div>

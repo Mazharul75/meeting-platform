@@ -2,10 +2,15 @@
 {% set hide_nav = not current_user %}
 {% block title %}{{ title }}{% endblock %}
 {% block content %}
-<div class="text-center py-5">
-  <p class="display-6 text-secondary mb-2">{{ status }}</p>
-  <h1 class="h3">{{ title }}</h1>
-  <p class="text-secondary">{{ message }}</p>
-  <a class="btn btn-primary" href="/">Go to the start page</a>
+<div class="d-flex justify-content-center py-5">
+  <div class="card ticks auth-card">
+    <div class="card-body">
+      <svg class="icon icon-lg"><use href="#i-shield"/></svg>
+      <p class="text-secondary fw-bold mb-1">{{ status }}</p>
+      <h1 class="fs-4">{{ title }}</h1>
+      <p class="text-secondary">{{ message }}</p>
+      <a class="btn btn-primary ticks" href="/"><svg class="icon"><use href="#i-dashboard"/></svg>Go to the start page</a>
+    </div>
+  </div>
 </div>
 {% endblock %}
