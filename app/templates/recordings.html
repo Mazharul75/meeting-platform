@@ -2,8 +2,15 @@
 {% set nav = "recordings" %}
 {% block title %}Recordings{% endblock %}
 {% block content %}
-<div class="page-head"><h1>Recordings</h1></div>
+<div class="page-head">
+  <h1><svg class="icon"><use href="#i-video"/></svg>Recordings</h1>
+  <div class="search-box position-relative">
+    <svg class="icon"><use href="#i-search"/></svg>
+    <input type="search" id="recording-search" class="form-control" placeholder="Search recordings" aria-label="Search recordings">
+  </div>
+</div>
 <div hx-get="/recordings" hx-trigger="every 10s" hx-swap="innerHTML" id="recordings-list">
   {% include "_recordings_table.html" %}
 </div>
 {% endblock %}
+{% block scripts %}<script src="/static/js/recordings_search.js"></script>{% endblock %}

@@ -3,16 +3,16 @@
 {% block title %}Recording{% endblock %}
 {% block content %}
 {% set tz = current_user.timezone %}
-<nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="/recordings">Recordings</a></li><li class="breadcrumb-item active" aria-current="page">{{ meeting.title }}</li></ol></nav>
+<a class="crumb" href="/recordings"><svg class="icon"><use href="#i-back"/></svg>Recordings library</a>
 <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
   <div>
-    <h1 class="fs-3 mb-1">{{ meeting.title }}</h1>
-    <div class="text-secondary">{{ recording.created_at | dt(tz) }} · {{ recording.total_duration_ms | duration }} · {{ recording.total_bytes | filesize }}</div>
+    <h1 class="fs-3 mb-1"><svg class="icon"><use href="{{ '#i-video' if meeting.mode == 'online' else '#i-users' }}"/></svg>{{ meeting.title }}</h1>
+    <div class="text-secondary"><svg class="icon"><use href="#i-clock"/></svg>{{ recording.created_at | dt(tz) }} · {{ meeting.host.display_name }} · {{ 'Online' if meeting.mode == 'online' else 'In-person' }} · {{ recording.total_duration_ms | duration }} · {{ recording.total_bytes | filesize }}</div>
   </div>
   <div class="d-flex align-items-center gap-2">
-    <span class="badge text-bg-{{ {'recording':'danger','uploading':'warning','ready':'success','partial':'warning','failed':'dark'}.get(recording.status,'secondary') }}">{{ recording.status }}</span>
+    <span class="pill pill-{{ recording.status }}">{{ recording.status }}</span>
     {% if can_delete %}
-    <button class="btn btn-outline-danger btn-sm" hx-delete="/recordings/{{ recording.id }}" hx-confirm="Delete this recording permanently? This cannot be undone." hx-swap="none">Delete</button>
+    <button class="btn btn-outline-danger btn-sm" hx-delete="/recordings/{{ recording.id }}" hx-confirm="Delete this recording permanently? This cannot be undone." hx-swap="none"><svg class="icon"><use href="#i-trash"/></svg>Delete</button>
     {% endif %}
   </div>
 </div>
@@ -26,21 +26,21 @@
 {% endif %}
 
 {% if links %}
-<div class="card mb-4"><div class="card-body">
-  <div class="ratio ratio-16x9 bg-dark rounded overflow-hidden">
+<div class="card ticks mb-4"><div class="card-body">
+  <div class="ratio ratio-16x9 rounded overflow-hidden video-frame">
     <video id="player" controls playsinline preload="metadata" aria-label="Recording player"></video>
   </div>
   <div id="player-status" class="small text-secondary mt-2" aria-live="polite"></div>
 </div></div>
-<div class="card"><div class="card-body">
-  <h2 class="h5">Parts</h2>
+<div class="card ticks"><div class="card-body">
+  <h2><svg class="icon"><use href="#i-play"/></svg>Parts</h2>
   <ol class="list-group list-group-numbered" id="part-list">
     {% for l in links %}
     <li class="list-group-item d-flex justify-content-between align-items-center" data-part="{{ l.n }}">
       <span>Part {{ l.n }} · {{ l.duration_ms | duration }} · {{ l.size | filesize }}</span>
       <span class="d-flex gap-2">
-        <button class="btn btn-sm btn-outline-primary" type="button" data-play="{{ l.n }}">Play</button>
-        {% if can_download %}<a class="btn btn-sm btn-outline-secondary" href="/recordings/{{ recording.id }}/parts/{{ l.n }}/download">Download</a>{% endif %}
+        <button class="btn btn-sm btn-outline-primary" type="button" data-play="{{ l.n }}"><svg class="icon"><use href="#i-play"/></svg>Play</button>
+        {% if can_download %}<a class="btn btn-sm btn-outline-secondary" href="/recordings/{{ recording.id }}/parts/{{ l.n }}/download"><svg class="icon"><use href="#i-download"/></svg>Download</a>{% endif %}
       </span>
     </li>
     {% endfor %}
@@ -48,7 +48,7 @@
 </div></div>
 <script type="application/json" id="player-config">{{ player_config | tojson }}</script>
 {% elif recording.status not in ['recording', 'uploading', 'failed'] %}
-<div class="empty-state card card-body"><p class="mb-0">There is nothing to play for this recording.</p></div>
+<div class="empty-state card ticks card-body"><p class="mb-0">There is nothing to play for this recording.</p></div>
 {% endif %}
 {% endblock %}
 {% block scripts %}{% if links %}<script type="module" src="/static/js/player.js"></script>{% endif %}{% endblock %}
