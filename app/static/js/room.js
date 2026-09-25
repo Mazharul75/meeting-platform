@@ -65,10 +65,17 @@ class RoomController {
     this.room.on(RoomEvent.ParticipantConnected, (p) => this.addTile(p, false));
     this.room.on(RoomEvent.ParticipantDisconnected, (p) => this.removeTile(p));
     this.room.on(RoomEvent.TrackSubscribed, (track, pub, p) => this.attachTrack(track, p));
-    this.room.on(RoomEvent.TrackUnsubscribed, (track) => track.detach().forEach((el) => el.remove()));
+    this.room.on(RoomEvent.TrackUnsubscribed, (track, pub, p) => {
+      track.detach().forEach((el) => el.remove());
+      if (track.kind === "video") {
+        document.getElementById("tile-" + p.identity)?.querySelector(".room-tile-avatar")?.classList.remove("d-none");
+      }
+    });
     this.room.on(RoomEvent.LocalTrackPublished, (pub, p) => {
       if (pub.track) this.attachTrack(pub.track, p);
     });
+    this.room.on(RoomEvent.TrackMuted, (pub, p) => this.updateChips(p));
+    this.room.on(RoomEvent.TrackUnmuted, (pub, p) => this.updateChips(p));
     this.room.on(RoomEvent.Reconnecting, () => this.setStatus("Reconnecting..."));
     this.room.on(RoomEvent.Reconnected, () => this.setStatus("Connected"));
     this.room.on(RoomEvent.Disconnected, (reason) => {
@@ -78,27 +85,60 @@ class RoomController {
     });
   }
 
+  initials(name) {
+    return (name || "?").trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+  }
+
   tileFor(identity) {
     let tile = document.getElementById("tile-" + identity);
     if (!tile) {
       tile = document.createElement("div");
       tile.className = "room-tile";
       tile.id = "tile-" + identity;
-      tile.innerHTML = '<video autoplay playsinline></video><span class="room-tile-name"></span>';
+      tile.innerHTML =
+        '<span class="room-tile-avatar"></span>' +
+        '<span class="room-tile-chips"></span>' +
+        '<span class="room-tile-name"></span>';
       $("tiles").appendChild(tile);
+      this.updateCount();
     }
     return tile;
+  }
+
+  updateCount() {
+    const n = $("tiles").children.length;
+    const el = $("room-count");
+    if (el) el.textContent = `${n} in the meeting`;
   }
 
   addTile(participant, isLocal) {
     const tile = this.tileFor(participant.identity);
     tile.dataset.identity = participant.identity;
-    tile.querySelector(".room-tile-name").textContent =
-      (isLocal ? "You" : this.names.get(participant.identity)) || "Connecting...";
+    const name = (isLocal ? "You" : this.names.get(participant.identity)) || "Connecting…";
+    tile.querySelector(".room-tile-name").textContent = isLocal ? `${name} (Host)` : name;
+    tile.querySelector(".room-tile-avatar").textContent = this.initials(isLocal ? "You" : name);
+  }
+
+  updateChips(participant) {
+    const tile = document.getElementById("tile-" + participant.identity);
+    const chips = tile?.querySelector(".room-tile-chips");
+    if (!chips) return;
+    const bits = [];
+    if (!participant.isMicrophoneEnabled) bits.push("Mic off");
+    if (!participant.isCameraEnabled) bits.push("Cam off");
+    chips.replaceChildren(
+      ...bits.map((text) => {
+        const span = document.createElement("span");
+        span.className = "chip";
+        span.textContent = text;
+        return span;
+      }),
+    );
   }
 
   removeTile(participant) {
     document.getElementById("tile-" + participant.identity)?.remove();
+    this.updateCount();
   }
 
   attachTrack(track, participant) {
@@ -109,7 +149,9 @@ class RoomController {
       el.autoplay = true;
       el.playsInline = true;
       tile.prepend(el);
+      tile.querySelector(".room-tile-avatar")?.classList.add("d-none");
     }
+    // Audio elements need no DOM placement: track.attach() already plays them once attached.
   }
 
   async pollNames() {
@@ -175,13 +217,17 @@ class RoomController {
 function bindControls(controller) {
   $("btn-mic").addEventListener("click", () => {
     const on = controller.toggleMic();
-    $("btn-mic").textContent = on ? "Mute" : "Unmute";
+    $("btn-mic").querySelector(".lbl").textContent = on ? "Mute" : "Unmute";
+    $("mic-icon").setAttribute("href", on ? "#i-mic" : "#i-mic-off");
     $("btn-mic").setAttribute("aria-pressed", String(!on));
+    controller.updateChips(controller.room.localParticipant);
   });
   $("btn-cam").addEventListener("click", () => {
     const on = controller.toggleCamera();
-    $("btn-cam").textContent = on ? "Camera off" : "Camera on";
+    $("btn-cam").querySelector(".lbl").textContent = on ? "Camera off" : "Camera on";
+    $("cam-icon").setAttribute("href", on ? "#i-cam" : "#i-cam-off");
     $("btn-cam").setAttribute("aria-pressed", String(!on));
+    controller.updateChips(controller.room.localParticipant);
   });
   $("btn-leave").addEventListener("click", async () => {
     $("btn-leave").disabled = true;
@@ -206,13 +252,13 @@ function bindControls(controller) {
         recBtn.disabled = true;
         await controller.startRecording(true);
         recBtn.disabled = false;
-        recBtn.textContent = "Stop recording";
+        recBtn.querySelector(".lbl").textContent = "Stop recording";
         $("rec-badge").classList.remove("d-none");
       } else {
         recBtn.disabled = true;
         await controller.stopRecording();
         recBtn.disabled = false;
-        recBtn.textContent = "Start recording";
+        recBtn.querySelector(".lbl").textContent = "Start recording";
         $("rec-badge").classList.add("d-none");
       }
     });

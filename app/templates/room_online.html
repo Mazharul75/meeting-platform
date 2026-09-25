@@ -5,26 +5,31 @@
 {% block bare %}
 <div class="room-page">
   <header class="room-top">
-    <div>
+    <span id="rec-badge" class="room-rec-dot d-none" role="status"><span class="dot"></span>Recording</span>
+    <div class="text-center">
       <strong>{{ meeting.title }}</strong>
-      <span id="room-status" class="text-secondary small ms-2" aria-live="polite">Connecting...</span>
+      <span class="text-secondary">· Started by {{ meeting.host.display_name }}</span>
+      <span id="room-status" class="text-secondary d-block d-sm-inline" aria-live="polite">Connecting…</span>
     </div>
-    <span id="rec-badge" class="rec-badge d-none" role="status">● Recording</span>
+    <span id="room-count" class="text-secondary"><svg class="icon"><use href="#i-users"/></svg>1 in the meeting</span>
   </header>
 
-  <div class="alert alert-warning room-consent" role="note">
-    This meeting may be recorded. If it is, a red "Recording" badge is shown to everyone here.
-    Keep this tab visible for the whole meeting.
+  <div class="alert alert-warning room-consent ticks ticks-light" role="note">
+    <svg class="icon"><use href="#i-shield"/></svg>This meeting is being recorded. By staying, you consent to being recorded.
   </div>
 
   <div id="tiles" class="room-tiles" aria-label="Participants"></div>
 
   <footer class="room-controls">
-    <button id="btn-mic" class="btn btn-outline-secondary" type="button" aria-pressed="true">Mute</button>
-    <button id="btn-cam" class="btn btn-outline-secondary" type="button" aria-pressed="true">Camera off</button>
+    <button id="btn-mic" class="icon-btn" type="button" aria-pressed="true" aria-label="Mute microphone">
+      <svg class="icon"><use id="mic-icon" href="#i-mic"/></svg><span class="lbl">Mute</span>
+    </button>
+    <button id="btn-cam" class="icon-btn" type="button" aria-pressed="true" aria-label="Turn camera off">
+      <svg class="icon"><use id="cam-icon" href="#i-cam"/></svg><span class="lbl">Camera off</span>
+    </button>
     {% if can_record %}
     <span class="room-record-group">
-      <button id="btn-record" class="btn btn-danger" type="button">Start recording</button>
+      <button id="btn-record" class="btn btn-danger ticks ticks-light" type="button"><svg class="icon"><use id="record-icon" href="#i-record"/></svg><span class="lbl">Start recording</span></button>
       <span class="form-check form-check-inline ms-2">
         <input class="form-check-input" type="checkbox" id="consent">
         <label class="form-check-label small" for="consent">Everyone here has been told this is recorded</label>
@@ -33,9 +38,9 @@
     </span>
     {% endif %}
     {% if can_end %}
-    <button id="btn-end" class="btn btn-outline-danger" type="button">End for everyone</button>
+    <button id="btn-end" class="btn btn-outline-danger" type="button"><svg class="icon"><use href="#i-phone-off"/></svg>End for everyone</button>
     {% endif %}
-    <button id="btn-leave" class="btn btn-secondary ms-auto" type="button">Leave</button>
+    <button id="btn-leave" class="btn btn-secondary ms-auto" type="button"><svg class="icon"><use href="#i-phone-off"/></svg>Leave</button>
   </footer>
 </div>
 <script type="application/json" id="room-config">{{ room_config | tojson }}</script>
