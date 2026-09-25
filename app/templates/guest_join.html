@@ -1,46 +1,54 @@
 {% extends "base.html" %}
 {% set hide_nav = true %}
 {% block title %}Join meeting{% endblock %}
-{% block content %}
-<div class="row justify-content-center"><div class="col-12 col-md-8 col-lg-6">
-  <h1 class="fs-3 mb-1">{{ meeting.title }}</h1>
-  <p class="text-secondary">You were invited as a guest. You will only see this meeting.</p>
+{% block bare %}
+<div class="auth-shell">
   {% if step == 'consent' %}
-  <div class="card"><div class="card-body">
-    <div class="alert alert-warning" role="note">This meeting may be recorded. While recording, a red “Recording” badge is shown to everyone.</div>
+  <div class="card auth-card auth-card-wide ticks">
+    <span class="eyebrow"><svg class="icon"><use href="#i-link"/></svg>You're invited</span>
+    <h1 class="fs-3 mb-1">{{ meeting.title }}</h1>
+    <p class="text-secondary mb-4"><svg class="icon"><use href="#i-user"/></svg>Hosted by {{ meeting.host.display_name }} · {{ meeting.scheduled_start | dt(meeting.timezone) }}</p>
     <form method="post" action="/join/{{ token }}" novalidate>
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <div class="mb-3">
-        <label class="form-label" for="name">Your name</label>
-        <input class="form-control {{ 'is-invalid' if errors and errors.name }}" id="name" name="name" maxlength="60" required value="{{ name or '' }}">
+        <label class="form-label" for="name"><svg class="icon"><use href="#i-user"/></svg>Your name</label>
+        <input class="form-control {{ 'is-invalid' if errors and errors.name }}" id="name" name="name" maxlength="60" placeholder="e.g. Iqbal Chowdhury" required value="{{ name or '' }}">
         {% if errors and errors.name %}<div class="invalid-feedback">{{ errors.name }}</div>{% endif %}
       </div>
       <div class="form-check mb-3">
         <input class="form-check-input {{ 'is-invalid' if errors and errors.consent }}" type="checkbox" name="consent" value="yes" id="consent" required>
-        <label class="form-check-label" for="consent">I understand this meeting may be recorded.</label>
+        <label class="form-check-label" for="consent">I understand this meeting is recorded and I consent to being recorded.</label>
         {% if errors and errors.consent %}<div class="invalid-feedback d-block">{{ errors.consent }}</div>{% endif %}
       </div>
-      <button class="btn btn-primary" type="submit">Continue</button>
+      <div class="d-flex gap-2 mb-3">
+        <span class="badge text-bg-secondary"><svg class="icon"><use href="#i-cam"/></svg>Camera will be requested</span>
+        <span class="badge text-bg-secondary"><svg class="icon"><use href="#i-mic"/></svg>Microphone will be requested</span>
+      </div>
+      <button class="btn btn-primary ticks w-100" type="submit">Continue<svg class="icon icon-end"><use href="#i-arrow"/></svg></button>
     </form>
-  </div></div>
+    <p class="auth-foot text-center">No account needed. This link only opens this one meeting.</p>
+  </div>
   {% else %}
-  <div class="card"><div class="card-body">
-    <p class="mb-3">Thanks, {{ name }}. Check your camera and microphone below.</p>
-    <div class="ratio ratio-16x9 bg-dark rounded overflow-hidden mb-3">
-      <video id="preview" class="preview-video" autoplay muted playsinline aria-label="Camera preview"></video>
+  <div class="card auth-card auth-card-wide ticks">
+    <h1 class="fs-3 mb-1"><svg class="icon"><use href="#i-cam"/></svg>Device check</h1>
+    <p class="text-secondary mb-3">Thanks, {{ name }}. Check your camera and microphone below.</p>
+    <div class="preview-frame">
+      <span>Camera preview</span>
+      <video id="preview" class="preview-video d-none" autoplay muted playsinline aria-label="Camera preview"></video>
     </div>
     <div id="lobby-error" class="alert alert-danger d-none" role="alert"></div>
-    <label class="form-label small" for="level">Microphone level</label>
-    <meter id="level" class="level-meter" min="0" max="1" value="0" aria-label="Microphone level"></meter>
-    <div class="row g-2 mt-2">
-      <div class="col-sm-6"><label class="form-label small" for="cam-select">Camera</label><select id="cam-select" class="form-select"></select></div>
-      <div class="col-sm-6"><label class="form-label small" for="mic-select">Microphone</label><select id="mic-select" class="form-select"></select></div>
+    <span class="section-label mb-1"><svg class="icon"><use href="#i-mic"/></svg>Microphone level</span>
+    <div id="level-bars" class="level-bars" aria-hidden="true">
+      <span class="bar" data-h="1"></span><span class="bar" data-h="1"></span><span class="bar" data-h="1"></span><span class="bar" data-h="1"></span><span class="bar" data-h="1"></span>
     </div>
-    <button id="start-test" class="btn btn-primary mt-3" type="button">Start camera and microphone test</button>
-    <hr>
-    <a class="btn btn-primary" href="/join/{{ token }}/room?name={{ name | urlencode }}">Join room</a>
-  </div></div>
+    <div class="row g-2 mt-2">
+      <div class="col-sm-6"><label class="form-label" for="cam-select"><svg class="icon"><use href="#i-cam"/></svg>Camera</label><select id="cam-select" class="form-select"></select></div>
+      <div class="col-sm-6"><label class="form-label" for="mic-select"><svg class="icon"><use href="#i-mic"/></svg>Microphone</label><select id="mic-select" class="form-select"></select></div>
+    </div>
+    <button id="start-test" class="btn btn-outline-primary w-100 mt-3" type="button"><svg class="icon"><use href="#i-cam"/></svg>Start camera and microphone test</button>
+    <a class="btn btn-primary ticks w-100 mt-3" href="/join/{{ token }}/room?name={{ name | urlencode }}"><svg class="icon"><use href="#i-video"/></svg>Join meeting</a>
+  </div>
   {% endif %}
-</div></div>
+</div>
 {% endblock %}
 {% block scripts %}{% if step == 'lobby' %}<script type="module" src="/static/js/lobby.js"></script>{% endif %}{% endblock %}

@@ -1,4 +1,4 @@
-// Device test lobby: camera preview, microphone level meter, device pickers, clear errors.
+// Device test lobby: camera preview, vertical-bar microphone level meter, device pickers.
 const $ = (id) => document.getElementById(id);
 
 export function describeMediaError(err) {
@@ -29,7 +29,7 @@ function init() {
   const errBox = $("lobby-error");
   const cam = $("cam-select");
   const mic = $("mic-select");
-  const meter = $("level");
+  const bars = document.querySelectorAll("#level-bars .bar");
   let stream = null;
   let audioCtx = null;
   let raf = 0;
@@ -84,6 +84,8 @@ function init() {
       return;
     }
     preview.srcObject = stream;
+    preview.previousElementSibling?.classList.add("d-none"); // "Camera preview" placeholder text
+    preview.classList.remove("d-none");
     // The AudioContext is created from a click, otherwise browsers keep it silent.
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const analyser = audioCtx.createAnalyser();
@@ -91,7 +93,15 @@ function init() {
     audioCtx.createMediaStreamSource(stream).connect(analyser);
     const buffer = new Uint8Array(analyser.fftSize);
     const tick = () => {
-      meter.value = level(analyser, buffer);
+      const v = level(analyser, buffer);
+      bars.forEach((bar, i) => {
+        const threshold = (i + 1) / bars.length;
+        const active = v >= threshold - 1 / bars.length / 2;
+        // A data-attribute (not a style write) picks a CSS-defined height, so the strict
+        // Content-Security-Policy (no inline styles) is never touched.
+        bar.dataset.h = String(Math.max(1, Math.min(10, Math.round(v * 10))));
+        bar.classList.toggle("peak", active);
+      });
       raf = requestAnimationFrame(tick);
     };
     tick();
