@@ -7,8 +7,8 @@
   <meta name="htmx-config" content='{"allowEval":false,"includeIndicatorStyles":false}'>
   <meta name="csrf-token" content="{{ csrf_token }}">
   <title>{% block title %}Meetings{% endblock %} · CSoft Meetings</title>
-  <link rel="stylesheet" href="/static/vendor/bootstrap.min.css">
-  <link rel="stylesheet" href="/static/css/theme.css">
+  <link rel="stylesheet" href="{{ static('vendor/bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ static('css/theme.css') }}">
 </head>
 <body hx-headers='{"X-CSRF-Token": "{{ csrf_token }}"}'>
   <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" class="d-none" aria-hidden="true">
@@ -70,8 +70,8 @@
     </main>
   </div>
   {% endif %}
-  <script src="/static/vendor/bootstrap.bundle.min.js"></script>
-  <script src="/static/vendor/htmx.min.js"></script>
+  <script src="{{ static('vendor/bootstrap.bundle.min.js') }}"></script>
+  <script src="{{ static('vendor/htmx.min.js') }}"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

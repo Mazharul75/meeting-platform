@@ -46,6 +46,6 @@
 <script type="application/json" id="room-config">{{ room_config | tojson }}</script>
 {% endblock %}
 {% block scripts %}
-<script src="/static/vendor/livekit-client.umd.js"></script>
-<script type="module" src="/static/js/room.js"></script>
+<script src="{{ static('vendor/livekit-client.umd.js') }}"></script>
+<script type="module" src="{{ static('js/room.js') }}"></script>
 {% endblock %}

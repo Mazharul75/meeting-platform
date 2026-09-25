@@ -1,6 +1,7 @@
 """Jinja2 setup (auto-escaping stays on) and template helpers."""
 from __future__ import annotations
 
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -13,6 +14,16 @@ from app.security import csrf
 from app.services.meetings import to_local
 
 BASE_DIR = Path(__file__).parent
+
+# Changes every time the process starts (i.e. every deploy). Appended to static asset URLs so a
+# browser that cached an old theme.css or room.js under the same path fetches the new one instead
+# of silently keeping the stale file - without this, a redesign like this one can look "broken"
+# in a browser that visited the site before the update, purely from caching.
+ASSET_VERSION = str(int(time.time()))
+
+
+def static_url(path: str) -> str:
+    return f"/static/{path.lstrip('/')}?v={ASSET_VERSION}"
 
 
 FLASH = {
@@ -66,3 +77,4 @@ def fmt_bytes(n: int | None) -> str:
 templates.env.filters["dt"] = fmt_dt
 templates.env.filters["duration"] = fmt_duration
 templates.env.filters["filesize"] = fmt_bytes
+templates.env.globals["static"] = static_url

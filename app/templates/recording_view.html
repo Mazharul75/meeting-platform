@@ -51,4 +51,4 @@
 <div class="empty-state card ticks card-body"><p class="mb-0">There is nothing to play for this recording.</p></div>
 {% endif %}
 {% endblock %}
-{% block scripts %}{% if links %}<script type="module" src="/static/js/player.js"></script>{% endif %}{% endblock %}
+{% block scripts %}{% if links %}<script type="module" src="{{ static('js/player.js') }}"></script>{% endif %}{% endblock %}

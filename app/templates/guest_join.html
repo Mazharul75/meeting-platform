@@ -51,4 +51,4 @@
   {% endif %}
 </div>
 {% endblock %}
-{% block scripts %}{% if step == 'lobby' %}<script type="module" src="/static/js/lobby.js"></script>{% endif %}{% endblock %}
+{% block scripts %}{% if step == 'lobby' %}<script type="module" src="{{ static('js/lobby.js') }}"></script>{% endif %}{% endblock %}
