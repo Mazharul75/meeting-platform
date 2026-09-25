@@ -196,9 +196,9 @@ async def test_storage_meter_counts_only_live_recordings(login_as, make_user, ma
     rid = (await start(c, m)).json()["recording_id"]
     await put_and_complete(c, session, storage, rid, 1, b"z" * 2048)
     await c.post(f"/api/recordings/{rid}/finish", headers=H(c), json={"parts_expected": 1})
-    assert "2.0 KB" in (await c.get("/")).text
+    assert "2.0 KB used" in (await c.get("/")).text
     await c.delete(f"/recordings/{rid}", headers=H(c))
-    assert "0 B of" in (await c.get("/")).text
+    assert "0 B used" in (await c.get("/")).text
 
 
 async def test_note_endpoint_whitelist(login_as, make_user, make_meeting, session):

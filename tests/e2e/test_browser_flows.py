@@ -12,8 +12,9 @@ pytestmark = pytest.mark.e2e
 def schedule(page, base, title, invite_staff=False, minutes_from_now=1440):
     page.goto(base + "/meetings/new")
     page.fill("#title", title)
-    when = (datetime.now() + timedelta(minutes=minutes_from_now)).strftime("%Y-%m-%dT%H:%M")
-    page.fill("#start", when)
+    when = datetime.now() + timedelta(minutes=minutes_from_now)
+    page.fill("#date", when.strftime("%Y-%m-%d"))
+    page.fill("#time", when.strftime("%H:%M"))
     page.fill("#timezone", "Asia/Dhaka")
     if invite_staff:
         page.check("text=Sam Staff")
@@ -25,21 +26,22 @@ def schedule(page, base, title, invite_staff=False, minutes_from_now=1440):
 def test_admin_creates_staff_and_login_desktop_and_phone(server, new_page):  # AC-01
     admin = new_page()
     login(admin, server, ADMIN)
-    admin.click("text=Team")
+    admin.click("text=Admin")
     admin.fill("#display_name", "Nadia New")
     admin.fill("form[action='/admin/users'] #email", "nadia@e2e.test")
     admin.fill("form[action='/admin/users'] #password", "short")
-    admin.click("button:has-text('Create account')")
+    admin.click("button:has-text('Add staff')")
     assert "at least 12" in admin.content()
     admin.fill("form[action='/admin/users'] #display_name", "Nadia New")
     admin.fill("form[action='/admin/users'] #email", "nadia@e2e.test")
     admin.fill("form[action='/admin/users'] #password", "nadia-password-123")
-    admin.click("button:has-text('Create account')")
+    admin.click("button:has-text('Add staff')")
     assert "account was created" in admin.content()
     for viewport in ({"width": 1280, "height": 800}, {"width": 390, "height": 844}):
         p = new_page(viewport=viewport)
         login(p, server, ("nadia@e2e.test", "nadia-password-123"))
-        assert p.locator("h1").inner_text().startswith("Hello, Nadia")
+        assert p.locator("h1").inner_text().strip() == "Dashboard"
+        assert "Welcome back, Nadia" in p.content()
 
 
 def test_schedule_calendar_and_permissions(server, new_page):  # AC-02, AC-03, AC-09 (UI part)
