@@ -708,6 +708,9 @@ export class Recorder {
     }
   }
 
+  /** Resolves only once every part has been uploaded and the server has confirmed "finish" -
+   *  a caller can safely navigate away or disconnect the moment this promise settles, because
+   *  nothing is left in flight that a page unload could cut short. */
   async stop() {
     if (this.state !== "recording") return;
     this.state = "stopping";
@@ -719,7 +722,7 @@ export class Recorder {
     this.state = "uploading";
     this.emitStatus();
     await this.wakeLock.stop();
-    this.completeWhenUploaded();
+    await this.completeWhenUploaded();
   }
 
   async completeWhenUploaded() {

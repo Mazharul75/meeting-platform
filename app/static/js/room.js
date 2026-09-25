@@ -1,7 +1,7 @@
 // Online meeting room (plan Section 10). Connects to LiveKit with end-to-end encryption,
 // shows a tile per participant, and lets the host record the whole call with composite.js.
 import { buildComposite } from "/static/js/composite.js";
-import { Recorder, createApi, createStore } from "/static/js/recorder.js";
+import { Recorder, createApi, createStore, findUnfinished, recoverRecording } from "/static/js/recorder.js";
 
 const LK = window.LivekitClient;
 const $ = (id) => document.getElementById(id);
@@ -190,6 +190,7 @@ class RoomController {
   }
 
   async endForEveryone() {
+    if (this.recording) await this.stopRecording();
     await fetchJson(this.endUrl);
   }
 
@@ -202,15 +203,54 @@ class RoomController {
       store: await createStore(),
     });
     this.compositeStop = composite.stop;
+    this.recorder.on("status", (s) => this.onRecorderStatus(s));
+    this.recorder.on("warning", (w) => this.setStatus(w.message));
+    this.blockUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", this.blockUnload);
     await this.recorder.start(consent);
     this.recording = true;
   }
 
+  onRecorderStatus(s) {
+    if (s.state === "uploading") {
+      this.setStatus(`Saving the recording (${s.partsUploaded}/${s.partsStarted} parts) - keep this tab open…`);
+    } else if (s.state === "done") {
+      this.setStatus("Connected");
+    }
+  }
+
+  /** Resolves only once the recording is fully uploaded and confirmed by the server, so it is
+   *  safe to disconnect or navigate away right after this returns (plan AC-06 / AC-07). */
   async stopRecording() {
     if (!this.recorder) return;
-    await this.recorder.stop();
-    this.compositeStop?.();
-    this.recording = false;
+    this.setStatus("Saving the recording - keep this tab open…");
+    try {
+      await this.recorder.stop();
+    } finally {
+      this.compositeStop?.();
+      this.recording = false;
+      if (this.blockUnload) window.removeEventListener("beforeunload", this.blockUnload);
+    }
+  }
+
+  /** Uploads anything left on this device from a recording that never finished last time -
+   *  a refresh, a crash or a closed tab right after "Stop recording" (plan AC-07). */
+  async recoverLeftoverRecording() {
+    try {
+      const store = await createStore();
+      const found = await findUnfinished(store);
+      const mine = found.filter((f) => f.meta.meetingId === this.meetingId);
+      if (!mine.length) return;
+      this.setStatus("Finishing a recording left over from last time…");
+      const api = createApi(csrfToken());
+      for (const f of mine) await recoverRecording({ store, api, meta: f.meta });
+      this.setStatus("Connected");
+    } catch (_) {
+      /* best effort: nothing local to lose if this fails, the parts stay in IndexedDB */
+    }
   }
 }
 
@@ -231,6 +271,7 @@ function bindControls(controller) {
   });
   $("btn-leave").addEventListener("click", async () => {
     $("btn-leave").disabled = true;
+    if (controller.recording) $("btn-leave").querySelector(".lbl")?.replaceChildren("Saving…");
     await controller.leave();
     window.location.href = "/";
   });
@@ -238,7 +279,9 @@ function bindControls(controller) {
   if (endBtn) {
     endBtn.addEventListener("click", async () => {
       if (!window.confirm("End this meeting for everyone?")) return;
+      endBtn.disabled = true;
       await controller.endForEveryone();
+      endBtn.disabled = false;
     });
   }
   const recBtn = $("btn-record");
@@ -283,7 +326,9 @@ async function init() {
     await controller.connect();
   } catch (err) {
     controller.setStatus("Could not join: " + err.message);
+    return;
   }
+  controller.recoverLeftoverRecording();
 }
 
 if (typeof document !== "undefined") init();

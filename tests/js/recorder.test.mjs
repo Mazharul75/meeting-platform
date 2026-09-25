@@ -179,8 +179,7 @@ test("recorder: rotates parts, stores chunks, uploads every part, then finishes"
   rec.queue.fix = noFix;
   rec.queue.sleep = nosleep;
   await new Promise((r) => setTimeout(r, 1000)); // ~3 parts of 0.3 s
-  await rec.stop();
-  await new Promise((r) => setTimeout(r, 100));
+  await rec.stop(); // must not resolve until the recording is fully saved - see the test below
   assert.ok(rec.partsStarted >= 3, `parts=${rec.partsStarted}`);
   assert.ok(rotations.length >= 2 && rotations.every((r) => r.gapMs < 500));
   assert.equal(rec.state, "done");
@@ -205,6 +204,44 @@ test("recorder: a part that reaches the byte limit rotates early", async () => {
   await new Promise((r) => setTimeout(r, 200));
   assert.ok(rec.partsStarted >= 2, "rotated long before the 60 second timer");
   await rec.stop();
+});
+
+test("recorder: stop() does not resolve until upload and finish are fully confirmed", async () => {
+  // Regression test: a caller (e.g. the online room, on Leave/End) awaits stop() and then
+  // immediately navigates away or disconnects. If stop() resolved early, that navigation could
+  // cut the still-in-flight upload short, leaving the recording stuck at status "recording"
+  // with 0 bytes forever - exactly what happened before this fix.
+  FakeRecorder.all.length = 0;
+  const store = new MemoryStore();
+  let finishCalls = 0;
+  let resolveFinish;
+  const finishGate = new Promise((r) => (resolveFinish = r));
+  const api = fakeApi({
+    finish: async (rid, n) => {
+      finishCalls++;
+      await finishGate; // finish() only completes once the test lets it
+      return { status: "ready", missing: [] };
+    },
+  });
+  const rec = new Recorder({ stream, meetingId: "m", api, store, settings: { partSeconds: 60 } });
+  await rec.start(true);
+  rec.queue.put = async () => {};
+  rec.queue.fix = noFix;
+  rec.queue.sleep = nosleep;
+  await new Promise((r) => setTimeout(r, 60));
+
+  let stopped = false;
+  const stopPromise = rec.stop().then(() => {
+    stopped = true;
+  });
+  await new Promise((r) => setTimeout(r, 50));
+  assert.equal(finishCalls, 1, "finish() should already have been called");
+  assert.equal(stopped, false, "stop() must still be waiting for finish() to complete");
+
+  resolveFinish();
+  await stopPromise;
+  assert.equal(stopped, true);
+  assert.equal(rec.state, "done");
 });
 
 test("recovery after a crash uploads leftover parts and finishes the recording", async () => {
