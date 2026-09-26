@@ -191,7 +191,9 @@ a:hover { text-decoration: underline; }
 .search-box .form-control { padding-left: 34px; }
 
 /* ---------- media and meters ---------- */
-.preview-video { width: 100%; height: 100%; object-fit: cover; background: var(--surface); }
+/* Mirrored like a normal mirror, for a natural self-view - this is always your own camera here.
+   Purely visual: it does not affect what's sent to others or what gets recorded. */
+.preview-video { width: 100%; height: 100%; object-fit: cover; background: var(--surface); transform: scaleX(-1); }
 .video-frame { background: var(--line-soft); }
 .preview-frame { aspect-ratio: 16/9; display: grid; place-items: center; color: var(--ink-faint); font-size: 0.9rem; background: var(--line-soft); border-radius: var(--radius); overflow: hidden; margin-bottom: 1rem; position: relative; }
 .preview-frame .preview-video { position: absolute; inset: 0; }
@@ -244,6 +246,9 @@ button, .btn, select, input[type="checkbox"] { touch-action: manipulation; }
 .room-tiles { flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; padding: 16px 20px; align-content: start; }
 .room-tile { position: relative; background: #1b2338; border-radius: var(--radius); overflow: hidden; aspect-ratio: 16 / 9; display: flex; align-items: center; justify-content: center; }
 .room-tile video { width: 100%; height: 100%; object-fit: cover; display: block; position: absolute; inset: 0; }
+/* Mirror only your own tile (a natural self-view) - other people's tiles and the recording,
+   which is drawn from this same video via canvas, are never mirrored. */
+.room-tile.is-local video { transform: scaleX(-1); }
 .room-tile-name { position: absolute; left: 0; bottom: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.6)); color: #fff; padding: 18px 10px 8px; font-size: 0.82rem; font-weight: 600; }
 .room-tile-avatar { width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,0.14); color: #fff; display: grid; place-items: center; font-weight: 700; z-index: 1; }
 .room-tile-chips { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; z-index: 1; }

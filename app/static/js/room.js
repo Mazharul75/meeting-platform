@@ -114,6 +114,10 @@ class RoomController {
   addTile(participant, isLocal) {
     const tile = this.tileFor(participant.identity);
     tile.dataset.identity = participant.identity;
+    // Mirror only our own tile (a normal "look in the mirror" self-view, like Zoom/Meet/Teams).
+    // This is a CSS-only flip on screen - the actual track sent to others and the recording
+    // (drawn from this same <video> via canvas drawImage) are never mirrored.
+    tile.classList.toggle("is-local", isLocal);
     const name = (isLocal ? "You" : this.names.get(participant.identity)) || "Connecting…";
     tile.querySelector(".room-tile-name").textContent = isLocal ? `${name} (Host)` : name;
     tile.querySelector(".room-tile-avatar").textContent = this.initials(isLocal ? "You" : name);
