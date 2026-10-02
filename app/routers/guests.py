@@ -123,6 +123,7 @@ async def guest_room(request: Request, token: str, name: str = "", db: AsyncSess
             "is_host": False,
             "can_record": False,
             "can_end": False,
+            "can_transcript": False,
             "room_config": {
                 "meetingId": str(meeting.id),
                 "tokenUrl": f"/join/{token}/livekit-token?name={display_name}",

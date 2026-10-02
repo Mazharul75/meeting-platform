@@ -454,6 +454,7 @@ async def meeting_room(
             "is_host": role == "host",
             "can_record": perm.is_allowed(role, "record"),
             "can_end": perm.is_allowed(role, "record"),
+            "can_transcript": role in ("host", "admin"),
             "room_config": {
                 "meetingId": str(meeting.id),
                 "tokenUrl": f"/api/meetings/{meeting.id}/livekit-token",
