@@ -26,6 +26,27 @@ export function gridLayout(count, width = WIDTH, height = HEIGHT) {
   return rects;
 }
 
+/** Splits the frame into a big "stage" area (for a shared screen) and a thumbnail strip
+ *  underneath for everyone's camera - the same layout the room page itself uses while a
+ *  screen is being shared. */
+export function stageSplit(width = WIDTH, height = HEIGHT) {
+  const stageH = Math.round(height * 0.74);
+  return {
+    stage: { x: 0, y: 0, w: width, h: stageH },
+    strip: { x: 0, y: stageH, w: width, h: height - stageH },
+  };
+}
+
+/** The largest rectangle that fits `srcW`x`srcH` inside `box` without cropping (letterboxed),
+ *  the way a shared screen should be drawn - never stretched or cut off. */
+export function fitContain(srcW, srcH, box) {
+  if (!srcW || !srcH) return { ...box };
+  const scale = Math.min(box.w / srcW, box.h / srcH);
+  const w = srcW * scale;
+  const h = srcH * scale;
+  return { x: box.x + (box.w - w) / 2, y: box.y + (box.h - h) / 2, w, h };
+}
+
 function makeWorkerTimer(intervalMs, onTick) {
   const code = `let t; onmessage = (e) => { if (e.data === 'stop') { clearInterval(t); return; } clearInterval(t); t = setInterval(() => postMessage(1), e.data); };`;
   const worker = new Worker(URL.createObjectURL(new Blob([code], { type: "application/javascript" })));
@@ -58,28 +79,44 @@ export function buildComposite(room) {
     return document.querySelector(`#tile-${participant.identity} .room-tile-name`)?.textContent || "";
   }
 
+  function drawTile(p, rect) {
+    const video = document.querySelector(`#tile-${p.identity} video`);
+    if (video && video.readyState >= 2) {
+      ctx.drawImage(video, rect.x, rect.y, rect.w, rect.h);
+    } else {
+      ctx.fillStyle = "#1b1f3b";
+      ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+    }
+    const labelH = Math.max(18, Math.round(rect.h * 0.11));
+    ctx.fillStyle = "rgba(0,0,0,0.55)";
+    ctx.fillRect(rect.x, rect.y + rect.h - labelH, rect.w, labelH);
+    ctx.fillStyle = "#fff";
+    ctx.font = `${Math.round(labelH * 0.62)}px sans-serif`;
+    ctx.fillText(nameFor(p), rect.x + 8, rect.y + rect.h - labelH * 0.32, rect.w - 16);
+  }
+
   function drawFrame() {
     ctx.fillStyle = "#10132b";
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
     if (videoFailed) return;
     try {
       const people = participants();
-      const rects = gridLayout(people.length);
-      people.forEach((p, i) => {
-        const rect = rects[i];
-        const video = document.querySelector(`#tile-${p.identity} video`);
-        if (video && video.readyState >= 2) {
-          ctx.drawImage(video, rect.x, rect.y, rect.w, rect.h);
-        } else {
-          ctx.fillStyle = "#1b1f3b";
-          ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
-        }
-        ctx.fillStyle = "rgba(0,0,0,0.55)";
-        ctx.fillRect(rect.x, rect.y + rect.h - 28, rect.w, 28);
-        ctx.fillStyle = "#fff";
-        ctx.font = "16px sans-serif";
-        ctx.fillText(nameFor(p), rect.x + 8, rect.y + rect.h - 8, rect.w - 16);
-      });
+      // While someone is sharing their screen, it takes the big "stage" area and everyone's
+      // camera shrinks into a thumbnail strip underneath - matching what the room page shows live.
+      const stageVideo = document.getElementById("stage-video");
+      const sharing = stageVideo && stageVideo.readyState >= 2 && !stageVideo.paused;
+      if (sharing) {
+        const { stage, strip } = stageSplit(WIDTH, HEIGHT);
+        ctx.fillStyle = "#000";
+        ctx.fillRect(stage.x, stage.y, stage.w, stage.h);
+        const fit = fitContain(stageVideo.videoWidth, stageVideo.videoHeight, stage);
+        ctx.drawImage(stageVideo, fit.x, fit.y, fit.w, fit.h);
+        const rects = gridLayout(people.length, strip.w, strip.h);
+        people.forEach((p, i) => drawTile(p, { x: rects[i].x + strip.x, y: rects[i].y + strip.y, w: rects[i].w, h: rects[i].h }));
+      } else {
+        const rects = gridLayout(people.length);
+        people.forEach((p, i) => drawTile(p, rects[i]));
+      }
     } catch (err) {
       // Canvas drawing failed (e.g. a track error): fall back to audio-only, keep recording.
       videoFailed = true;
