@@ -56,7 +56,9 @@ ctranslate2==4.8.2
 onnxruntime==1.30.0
 tokenizers==0.23.2
 huggingface-hub==1.33.0
-av==19.0.0
+# Pinned below 13: faster-whisper 1.2.1 still calls av.open(metadata_errors=...), which
+# PyAV removed from its newer API - 13+ breaks transcription with a TypeError at runtime.
+av==12.3.0
 flatbuffers==25.12.19
 fsspec==2026.9.0
 hf-xet==1.6.0
