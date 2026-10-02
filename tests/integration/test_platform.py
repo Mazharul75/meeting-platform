@@ -96,9 +96,12 @@ async def test_idor_sweep(login_as, make_user, make_meeting, make_client, sessio
         ("GET", f"/recordings/{rid}", dict(host=200, admin=200, invited=200, other=404)),
         ("GET", f"/api/recordings/{rid}/parts", dict(host=200, admin=200, invited=200, other=404)),
         ("GET", f"/recordings/{rid}/parts/1/download", dict(host=303, admin=303, invited=403, other=404)),
-        ("POST", f"/api/recordings/{rid}/parts/1/upload-url", dict(host=409, admin=403, invited=403, other=404)),
-        ("POST", f"/api/recordings/{rid}/finish", dict(host=200, admin=403, invited=403, other=404)),
-        ("POST", f"/api/meetings/{m.id}/end", dict(host=200, admin=403, invited=403, other=404)),
+        # admin is a full superuser now, so it reaches the same state-based outcome as host -
+        # already-verified (409), idempotent finish (200), and (since host's own /end call just
+        # above already ended the meeting) a second /end hitting an illegal transition (409).
+        ("POST", f"/api/recordings/{rid}/parts/1/upload-url", dict(host=409, admin=409, invited=403, other=404)),
+        ("POST", f"/api/recordings/{rid}/finish", dict(host=200, admin=200, invited=403, other=404)),
+        ("POST", f"/api/meetings/{m.id}/end", dict(host=200, admin=409, invited=403, other=404)),
     ]
     clients = {"host": hc, "admin": await login_as(admin), "invited": await login_as(inv), "other": await login_as(other)}
     anon = make_client()

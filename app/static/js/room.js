@@ -447,12 +447,18 @@ function appendChatMessage({ name, text, mine }) {
   }
 }
 
+const PANEL_IDS = ["participants-panel", "chat-panel"];
+
+function closePanel(id) {
+  $(id)?.classList.add("d-none");
+}
+
 function togglePanel(id, otherIds) {
   const panel = $(id);
   if (!panel) return;
   const hidden = panel.classList.toggle("d-none");
   if (!hidden) {
-    for (const other of otherIds) $(other)?.classList.add("d-none");
+    for (const other of otherIds) closePanel(other);
     if (id === "chat-panel") $("chat-badge")?.classList.add("d-none");
   }
 }
@@ -492,6 +498,12 @@ function bindControls(controller) {
   });
   $("btn-participants")?.addEventListener("click", () => togglePanel("participants-panel", ["chat-panel"]));
   $("btn-chat")?.addEventListener("click", () => togglePanel("chat-panel", ["participants-panel"]));
+  document.querySelectorAll("[data-close-panel]").forEach((btn) => {
+    btn.addEventListener("click", () => closePanel(btn.dataset.closePanel));
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") PANEL_IDS.forEach(closePanel);
+  });
   const chatForm = $("chat-form");
   chatForm?.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -505,16 +517,26 @@ function bindControls(controller) {
   $("btn-leave").addEventListener("click", async () => {
     $("btn-leave").disabled = true;
     if (controller.recording) $("btn-leave").querySelector(".lbl")?.replaceChildren("Saving…");
-    await controller.leave();
-    window.location.href = "/";
+    try {
+      await controller.leave();
+      window.location.href = "/";
+    } catch (err) {
+      controller.setStatus("Could not leave cleanly: " + err.message + " - try again.");
+      $("btn-leave").disabled = false;
+    }
   });
   const endBtn = $("btn-end");
   if (endBtn) {
     endBtn.addEventListener("click", async () => {
       if (!window.confirm("End this meeting for everyone?")) return;
       endBtn.disabled = true;
-      await controller.endForEveryone();
-      endBtn.disabled = false;
+      try {
+        await controller.endForEveryone();
+      } catch (err) {
+        controller.setStatus("Could not end the meeting: " + err.message + " - try again.");
+      } finally {
+        endBtn.disabled = false;
+      }
     });
   }
   const recBtn = $("btn-record");
@@ -526,16 +548,26 @@ function bindControls(controller) {
           return;
         }
         recBtn.disabled = true;
-        await controller.startRecording(true);
-        recBtn.disabled = false;
-        recBtn.querySelector(".lbl").textContent = "Stop recording";
-        $("rec-badge").classList.remove("d-none");
+        try {
+          await controller.startRecording(true);
+          recBtn.querySelector(".lbl").textContent = "Stop recording";
+          $("rec-badge").classList.remove("d-none");
+        } catch (err) {
+          controller.setStatus("Could not start recording: " + err.message);
+        } finally {
+          recBtn.disabled = false;
+        }
       } else {
         recBtn.disabled = true;
-        await controller.stopRecording();
-        recBtn.disabled = false;
-        recBtn.querySelector(".lbl").textContent = "Start recording";
-        $("rec-badge").classList.add("d-none");
+        try {
+          await controller.stopRecording();
+          recBtn.querySelector(".lbl").textContent = "Start recording";
+          $("rec-badge").classList.add("d-none");
+        } catch (err) {
+          controller.setStatus("Could not stop recording cleanly: " + err.message + " - try again.");
+        } finally {
+          recBtn.disabled = false;
+        }
       }
     });
   }

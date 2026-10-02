@@ -55,6 +55,7 @@
       {% if current_user %}
       <nav class="topnav-links" aria-label="Main">
         <a href="/" class="{{ 'active' if nav == 'home' }}"><svg class="icon"><use href="#i-dashboard"/></svg>Dashboard</a>
+        <a href="/meetings" class="{{ 'active' if nav == 'meetings' }}"><svg class="icon"><use href="#i-cal"/></svg>Meetings</a>
         <a href="/recordings" class="{{ 'active' if nav == 'recordings' }}"><svg class="icon"><use href="#i-video"/></svg>Recordings</a>
         {% if current_user.role == 'admin' %}<a href="/admin/users" class="{{ 'active' if nav == 'users' }}"><svg class="icon"><use href="#i-shield"/></svg>Admin</a>{% endif %}
       </nav>
@@ -76,6 +77,8 @@
   {% endif %}
   <script src="{{ static('vendor/bootstrap.bundle.min.js') }}"></script>
   <script src="{{ static('vendor/htmx.min.js') }}"></script>
+  <script src="{{ static('js/clipboard.js') }}"></script>
+  <script src="{{ static('js/form_guard.js') }}"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

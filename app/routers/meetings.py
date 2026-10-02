@@ -17,6 +17,7 @@ from app.db import get_db
 from app.deps import current_user
 from app.models import GuestInvite, Meeting, MeetingMember, Recording, User
 from app.security import permissions as perm
+from app.security import ratelimit
 from app.services import audit, livekit_tokens, participant_names
 from app.services import meetings as svc
 from app.services.ics import meeting_ics
@@ -95,6 +96,29 @@ async def dashboard(
     )
 
 
+@router.get("/meetings", response_model=None)
+async def meetings_library(
+    request: Request, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
+) -> Response:
+    """Every meeting this user may see - host or invited staff, or every meeting for an admin
+    (same visibility rule as the dashboard and the recordings library) - searchable client-side,
+    unlike the dashboard's "next 20 upcoming" snippet."""
+    rows = (
+        (
+            await db.execute(
+                select(Meeting)
+                .where(perm.visible_meeting_filter(user))
+                .order_by(Meeting.scheduled_start.desc())
+                .limit(300)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    template = "_meetings_table.html" if request.headers.get("hx-request") else "meetings_library.html"
+    return templates.TemplateResponse(request, template, {"meetings": rows})
+
+
 # ------------------------------------------------------------------------------ scheduling
 
 
@@ -140,6 +164,7 @@ async def meeting_create(
     user: User = Depends(current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
+    ratelimit.enforce(f"meeting_create:{user.id}", 30, 3600)
     parsed, errors = svc.parse_meeting_form(title, description, mode, start, duration, timezone.strip())
     invitees: list[User] = []
     if user_ids:
@@ -298,6 +323,7 @@ async def meeting_invite(
     user: User = Depends(current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
+    ratelimit.enforce(f"meeting_invite:{user.id}", 60, 3600)
     meeting, role = await perm.require_meeting_access(db, user, meeting_id, "edit_meeting")
     if meeting.status not in ("scheduled", "live"):
         return await _detail_page(request, db, user, meeting, role, status=409, error="This meeting is closed.")
@@ -454,7 +480,6 @@ async def meeting_room(
             "is_host": role == "host",
             "can_record": perm.is_allowed(role, "record"),
             "can_end": perm.is_allowed(role, "record"),
-            "can_transcript": role in ("host", "admin"),
             "room_config": {
                 "meetingId": str(meeting.id),
                 "tokenUrl": f"/api/meetings/{meeting.id}/livekit-token",

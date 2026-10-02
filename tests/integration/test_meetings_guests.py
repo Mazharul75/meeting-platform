@@ -178,3 +178,19 @@ async def test_error_pages_have_no_details(login_as, make_user):
     r = await c.get("/meetings/00000000-0000-0000-0000-000000000000")
     assert r.status_code == 404 and "Traceback" not in r.text and "Page not found" in r.text
     assert (await c.get("/dev/nothing")).status_code == 404
+
+
+async def test_meetings_library_visibility(login_as, make_user, make_meeting):
+    host, inv, other, admin = (await make_user("h@x.com"), await make_user("i@x.com"), await make_user("o@x.com"),
+                               await make_user("a@x.com", "admin"))
+    await make_meeting(host, [inv], title="Visible to host and invited")
+    hc, ic, oc, ac = await login_as(host), await login_as(inv), await login_as(other), await login_as(admin)
+
+    for c in (hc, ic, ac):
+        page = await c.get("/meetings")
+        assert page.status_code == 200 and "Visible to host and invited" in page.text
+    assert "Visible to host and invited" not in (await oc.get("/meetings")).text
+
+    # the same data, server-rendered, is what the htmx auto-refresh swaps in
+    partial = await hc.get("/meetings", headers={"HX-Request": "true"})
+    assert "<html" not in partial.text and "Visible to host and invited" in partial.text

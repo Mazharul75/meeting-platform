@@ -8,7 +8,10 @@
     <h1 class="fs-3 mb-2">This link cannot be used</h1>
     <p class="text-secondary mb-0">
       {% if reason == 'not_yet' %}This meeting is not open yet. Please try again closer to the start time.
-      {% else %}The link is not valid, has expired or was cancelled. Please ask the meeting host for a new link.{% endif %}
+      {% elif reason == 'revoked' %}This link has been revoked by the meeting host. Please ask them for a new one.
+      {% elif reason == 'expired' %}This link has expired. Please ask the meeting host for a new one.
+      {% elif reason == 'meeting_closed' %}This meeting has already ended or was cancelled.
+      {% else %}This link is not valid. Please check it was copied correctly, or ask the meeting host for a new one.{% endif %}
     </p>
   </div>
 </div>

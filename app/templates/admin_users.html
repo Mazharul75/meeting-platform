@@ -18,7 +18,7 @@
             <td>{% if u.is_active %}<span class="pill pill-active">Active</span>{% else %}<span class="pill pill-deactivated">Deactivated</span>{% endif %}
                 {% if u.locked_until and u.locked_until > now_utc %}<span class="badge text-bg-warning ms-1"><svg class="icon icon-xs"><use href="#i-key"/></svg>Locked</span>{% endif %}</td>
             <td class="text-end">
-              <form method="post" action="/admin/users/{{ u.id }}/{{ 'deactivate' if u.is_active else 'activate' }}" class="d-inline">
+              <form method="post" action="/admin/users/{{ u.id }}/{{ 'deactivate' if u.is_active else 'activate' }}" class="d-inline" {% if u.is_active %}data-confirm="Deactivate {{ u.display_name }}? They will be signed out and unable to log in."{% endif %}>
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <button class="btn btn-sm btn-outline-{{ 'danger' if u.is_active else 'success' }}" type="submit">{% if u.is_active %}<svg class="icon"><use href="#i-x"/></svg>Deactivate{% else %}<svg class="icon"><use href="#i-plus"/></svg>Activate{% endif %}</button>
               </form>

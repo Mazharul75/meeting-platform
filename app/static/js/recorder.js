@@ -357,7 +357,13 @@ export class UploadQueue {
             resolve();
           };
         }));
-    if (typeof window !== "undefined") window.addEventListener("online", () => this.kick());
+    this._onOnline = () => this.kick();
+    if (typeof window !== "undefined") window.addEventListener("online", this._onOnline);
+  }
+  /** Removes the "online" listener. Call once this queue is no longer needed - otherwise a
+   *  new UploadQueue created for every record-start/stop cycle leaks one listener each time. */
+  destroy() {
+    if (typeof window !== "undefined") window.removeEventListener("online", this._onOnline);
   }
   get pending() {
     return this.items.length;
@@ -723,6 +729,7 @@ export class Recorder {
     this.emitStatus();
     await this.wakeLock.stop();
     await this.completeWhenUploaded();
+    this.queue.destroy();
   }
 
   async completeWhenUploaded() {
@@ -784,18 +791,22 @@ export async function recoverRecording({ store, api, emitter, meta, queueOptions
     const dur = p.durationMs ?? p.chunkCount * (meta.timesliceMs || DEFAULTS.timesliceMs);
     queue.enqueue(meta.recordingId, p.part, dur);
   }
-  await queue.idle();
-  const expected = Math.max(meta.partsStarted || 0, ...parts.map((p) => p.part), 0);
-  let attempt = 0;
-  for (;;) {
-    try {
-      const result = await api.finish(meta.recordingId, expected);
-      await store.deleteMeta(meta.recordingId);
-      emit.emit("finished", result);
-      return result;
-    } catch (err) {
-      if (err.status === 404) throw err;
-      await new Promise((r) => setTimeout(r, backoffMs(attempt++)));
+  try {
+    await queue.idle();
+    const expected = Math.max(meta.partsStarted || 0, ...parts.map((p) => p.part), 0);
+    let attempt = 0;
+    for (;;) {
+      try {
+        const result = await api.finish(meta.recordingId, expected);
+        await store.deleteMeta(meta.recordingId);
+        emit.emit("finished", result);
+        return result;
+      } catch (err) {
+        if (err.status === 404) throw err;
+        await new Promise((r) => setTimeout(r, backoffMs(attempt++)));
+      }
     }
+  } finally {
+    queue.destroy();
   }
 }

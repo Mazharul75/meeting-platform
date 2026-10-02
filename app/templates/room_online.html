@@ -26,14 +26,18 @@
   <aside id="participants-panel" class="room-side-panel d-none" aria-label="Participants">
     <div class="room-side-panel-head">
       <strong>Participants (<span id="participant-count">1</span>)</strong>
+      <button type="button" class="room-panel-close" data-close-panel="participants-panel" aria-label="Close participants panel"><svg class="icon"><use href="#i-x"/></svg></button>
     </div>
     <ul id="participant-list" class="list-group room-participant-list"></ul>
   </aside>
 
   <aside id="chat-panel" class="room-side-panel d-none" aria-label="Meeting chat">
-    <div class="room-side-panel-head"><strong>Chat</strong></div>
+    <div class="room-side-panel-head">
+      <strong>Chat</strong>
+      <button type="button" class="room-panel-close" data-close-panel="chat-panel" aria-label="Close chat panel"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
     <div id="chat-log" class="room-chat-log" aria-live="polite"></div>
-    <form id="chat-form" class="room-chat-form">
+    <form id="chat-form" class="room-chat-form" data-no-guard>
       <label for="chat-input" class="visually-hidden">Message</label>
       <input id="chat-input" type="text" class="form-control" placeholder="Message everyone…" maxlength="2000" autocomplete="off">
       <button type="submit" class="btn btn-primary">Send</button>
@@ -72,9 +76,9 @@
     </span>
     {% endif %}
     {% if can_end %}
-    <button id="btn-end" class="btn btn-outline-danger" type="button"><svg class="icon"><use href="#i-phone-off"/></svg>End for everyone</button>
+    <button id="btn-end" class="btn btn-outline-danger room-end-btn" type="button"><svg class="icon"><use href="#i-phone-off"/></svg>End for everyone</button>
     {% endif %}
-    <button id="btn-leave" class="btn btn-secondary ms-auto" type="button"><svg class="icon"><use href="#i-phone-off"/></svg><span class="lbl">Leave</span></button>
+    <button id="btn-leave" class="btn btn-secondary ms-auto room-leave-btn" type="button"><svg class="icon"><use href="#i-phone-off"/></svg><span class="lbl">Leave</span></button>
   </footer>
 </div>
 <script type="application/json" id="room-config">{{ room_config | tojson }}</script>

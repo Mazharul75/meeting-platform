@@ -14,7 +14,7 @@ from app.config import get_settings
 from app.db import get_db
 from app.deps import admin_user
 from app.models import User
-from app.security import sessions
+from app.security import ratelimit, sessions
 from app.security.passwords import hash_password, validate_new_password
 from app.services import audit
 from app.services.meetings import valid_timezone
@@ -56,6 +56,7 @@ async def create_user(
     admin: User = Depends(admin_user),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
+    ratelimit.enforce(f"admin_create_user:{admin.id}", 30, 3600)
     errors: dict[str, str] = {}
     email = email.strip().lower()
     display_name = display_name.strip()
@@ -109,6 +110,7 @@ async def reset_password(
     admin: User = Depends(admin_user),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
+    ratelimit.enforce(f"admin_reset_password:{admin.id}", 30, 3600)
     target = await _target(db, user_id)
     if (msg := validate_new_password(password)) is not None:
         return await _render(request, db, {"password": msg}, status=422)

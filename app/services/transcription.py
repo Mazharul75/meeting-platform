@@ -10,12 +10,16 @@ from __future__ import annotations
 import tempfile
 from functools import lru_cache
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from faster_whisper import WhisperModel
 
 WHISPER_MODEL_SIZE = "base"
 
 
 @lru_cache
-def _model():
+def _model() -> "WhisperModel":
     from faster_whisper import WhisperModel
 
     return WhisperModel(WHISPER_MODEL_SIZE, device="cpu", compute_type="int8")

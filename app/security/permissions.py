@@ -45,18 +45,9 @@ ALL_ACTIONS: tuple[Action, ...] = (
 
 # role -> set of allowed actions. An admin who is also the host is treated as the host.
 _MATRIX: dict[Role, frozenset[Action]] = {
-    "admin": frozenset(
-        {
-            "edit_meeting",
-            "view_meeting",
-            "join_room",
-            "manage_guest_links",
-            "play_recording",
-            "download_recording",
-            "delete_recording",
-            "transcribe",
-        }
-    ),
+    # An admin is a full superuser: everything a host can do, in any meeting, including
+    # starting/stopping a recording and muting a participant - not just viewing data.
+    "admin": frozenset(ALL_ACTIONS),
     "host": frozenset(ALL_ACTIONS),
     "invited": frozenset({"view_meeting", "join_room", "play_recording"}),
     "other": frozenset(),

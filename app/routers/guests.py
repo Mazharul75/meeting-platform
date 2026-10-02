@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from typing import Annotated
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import JSONResponse, Response
@@ -123,10 +124,9 @@ async def guest_room(request: Request, token: str, name: str = "", db: AsyncSess
             "is_host": False,
             "can_record": False,
             "can_end": False,
-            "can_transcript": False,
             "room_config": {
                 "meetingId": str(meeting.id),
-                "tokenUrl": f"/join/{token}/livekit-token?name={display_name}",
+                "tokenUrl": f"/join/{token}/livekit-token?name={quote(display_name)}",
                 "participantsUrl": f"/join/{token}/participants",
                 "endUrl": "",
                 "muteUrlBase": "",

@@ -1,0 +1,21 @@
+{% if meetings %}
+<div class="card ticks"><div class="table-responsive"><table class="table align-middle mb-0">
+  <thead><tr><th scope="col">Title</th><th scope="col">Mode</th><th scope="col">Status</th><th scope="col">Starts</th><th scope="col">Host</th></tr></thead>
+  <tbody>
+  {% for m in meetings %}
+    <tr>
+      <td><a href="/meetings/{{ m.id }}"><svg class="icon"><use href="{{ '#i-video' if m.mode == 'online' else '#i-users' }}"/></svg>{{ m.title }}</a></td>
+      <td>{{ 'Online' if m.mode == 'online' else 'In-person' }}</td>
+      <td><span class="pill {{ 'pill-live' if m.status == 'live' else 'pill-scheduled' if m.status == 'scheduled' else 'pill-deactivated' }}">{{ {'live':'Live now','scheduled':'Scheduled','ended':'Ended','cancelled':'Cancelled'}[m.status] }}</span></td>
+      <td>{{ m.scheduled_start | dt(current_user.timezone, false) }}</td>
+      <td>{{ m.host.display_name }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table></div></div>
+{% else %}
+<div class="empty-state card ticks card-body">
+  <svg class="icon icon-lg"><use href="#i-cal"/></svg>
+  <p class="mb-0">No meetings yet. Meetings you host or are invited to will appear here.</p>
+</div>
+{% endif %}

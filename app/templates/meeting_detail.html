@@ -17,13 +17,13 @@
     {% endif %}
     <a class="btn btn-outline-secondary" href="/meetings/{{ meeting.id }}/calendar.ics"><svg class="icon"><use href="#i-cal"/></svg>Add to calendar</a>
     {% if can.edit_meeting and meeting.status == 'scheduled' %}
-    <form method="post" action="/meetings/{{ meeting.id }}/cancel" class="m-0">
+    <form method="post" action="/meetings/{{ meeting.id }}/cancel" class="m-0" data-confirm="Cancel this meeting? Everyone invited will no longer be able to join.">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <button class="btn btn-outline-danger" type="submit"><svg class="icon"><use href="#i-x"/></svg>Cancel meeting</button>
     </form>
     {% endif %}
     {% if can.record and meeting.status == 'live' %}
-    <form method="post" action="/meetings/{{ meeting.id }}/end" class="m-0">
+    <form method="post" action="/meetings/{{ meeting.id }}/end" class="m-0" data-confirm="End this meeting for everyone right now?">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <button class="btn btn-danger" type="submit"><svg class="icon"><use href="#i-phone-off"/></svg>End meeting</button>
     </form>
@@ -107,7 +107,10 @@
       {% if new_link %}
       <div class="alert alert-warning" role="alert">
         <strong>Copy this link now — it is shown only once.</strong>
-        <input class="form-control mt-2" readonly value="{{ new_link }}" aria-label="Guest link">
+        <div class="input-group mt-2">
+          <input class="form-control" readonly value="{{ new_link }}" aria-label="Guest link" id="new-guest-link">
+          <button class="btn btn-outline-secondary" type="button" data-copy="#new-guest-link"><svg class="icon"><use href="#i-link"/></svg><span class="copy-label">Copy</span></button>
+        </div>
       </div>
       {% endif %}
       {% if meeting.status in ['scheduled','live'] %}

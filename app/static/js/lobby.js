@@ -33,6 +33,7 @@ function init() {
   let stream = null;
   let audioCtx = null;
   let raf = 0;
+  let requestId = 0; // guards against overlapping getUserMedia calls from fast device switching
 
   function showError(msg) {
     errBox.textContent = msg;
@@ -68,21 +69,31 @@ function init() {
   }
 
   async function start() {
+    const myId = ++requestId;
     showError("");
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       showError("This browser cannot use the camera. Please open the site in Chrome, Edge, Firefox or Safari over https.");
       return;
     }
     stop();
+    let newStream;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({
+      newStream = await navigator.mediaDevices.getUserMedia({
         video: cam.value ? { deviceId: { exact: cam.value } } : true,
         audio: mic.value ? { deviceId: { exact: mic.value } } : true,
       });
     } catch (err) {
+      if (myId !== requestId) return; // superseded by a newer device change - ignore this error
       showError(describeMediaError(err));
       return;
     }
+    if (myId !== requestId) {
+      // A newer device change started while this one was still asking for permission - drop
+      // this stream immediately rather than briefly showing the wrong device.
+      newStream.getTracks().forEach((t) => t.stop());
+      return;
+    }
+    stream = newStream;
     preview.srcObject = stream;
     preview.previousElementSibling?.classList.add("d-none"); // "Camera preview" placeholder text
     preview.classList.remove("d-none");

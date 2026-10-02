@@ -47,10 +47,11 @@ async def test_consent_and_host_only_start(login_as, make_user, make_meeting, se
     assert audio.json()["mime_type"] == "video/mp4"  # bucket only accepts video/* types
 
 
-async def test_admin_who_is_not_host_cannot_record(login_as, make_user, make_meeting):
+async def test_admin_who_is_not_host_can_also_record(login_as, make_user, make_meeting):
+    # Admin is a full superuser - same reach as the host, in any meeting.
     admin, host = await make_user("a@x.com", "admin"), await make_user("h@x.com")
     m = await make_meeting(host)
-    assert (await start(await login_as(admin), m)).status_code == 403
+    assert (await start(await login_as(admin), m)).status_code == 201
 
 
 async def test_full_upload_flow_and_path_chosen_by_server(login_as, make_user, make_meeting, session, storage):

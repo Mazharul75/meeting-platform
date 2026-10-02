@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% set nav = "meetings" %}
+{% block title %}Meetings{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1><svg class="icon"><use href="#i-cal"/></svg>Meetings</h1>
+  <div class="d-flex align-items-center gap-2">
+    <div class="search-box position-relative">
+      <svg class="icon"><use href="#i-search"/></svg>
+      <input type="search" id="meeting-search" class="form-control" placeholder="Search meetings" aria-label="Search meetings">
+    </div>
+    <a class="btn btn-primary ticks" href="/meetings/new"><svg class="icon"><use href="#i-cal"/></svg>Schedule meeting</a>
+  </div>
+</div>
+<div hx-get="/meetings" hx-trigger="every 15s" hx-swap="innerHTML" id="meetings-list">
+  {% include "_meetings_table.html" %}
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ static('js/meetings_search.js') }}"></script>{% endblock %}

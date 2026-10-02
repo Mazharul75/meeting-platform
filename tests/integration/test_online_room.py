@@ -191,13 +191,15 @@ async def test_only_host_can_mute_a_participant(login_as, make_user, make_meetin
     m = await make_meeting(host, [inv])
     hc, ic, oc, ac = await login_as(host), await login_as(inv), await login_as(other), await login_as(admin)
 
-    for c, code in ((ic, 403), (oc, 404), (ac, 403)):
+    for c, code in ((ic, 403), (oc, 404)):
         r = await c.post(f"/api/meetings/{m.id}/participants/abc123deadbeef/mute", headers=H(c))
         assert r.status_code == code, c
 
-    r = await hc.post(f"/api/meetings/{m.id}/participants/abc123deadbeef/mute", headers=H(hc))
-    assert r.status_code == 200 and r.json() == {"muted": True}
-    assert calls == [(str(m.room_name), "abc123deadbeef")]
+    # host and admin (a full superuser) can both moderate the meeting
+    for c in (hc, ac):
+        r = await c.post(f"/api/meetings/{m.id}/participants/abc123deadbeef/mute", headers=H(c))
+        assert r.status_code == 200 and r.json() == {"muted": True}
+    assert calls == [(str(m.room_name), "abc123deadbeef")] * 2
     actions = [a for (a,) in (await session.execute(select(AuditLog.action))).all()]
     assert "livekit.mute" in actions
 
