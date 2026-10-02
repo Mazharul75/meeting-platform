@@ -173,3 +173,60 @@ async def test_guest_participants_endpoint_scoped_to_own_meeting(login_as, make_
     names = await g.get(f"/join/{token}/participants")
     assert names.status_code == 200 and "Cara" in names.json()["participants"].values()
     await g.aclose()
+
+
+async def test_only_host_can_mute_a_participant(login_as, make_user, make_meeting, monkeypatch, session):
+    _configure_livekit(monkeypatch)
+    calls = []
+
+    async def fake_mute(settings, room_name, identity):
+        calls.append((room_name, identity))
+        return True
+
+    from app.routers import livekit as livekit_router
+
+    monkeypatch.setattr(livekit_router.livekit_tokens, "mute_participant_microphone", fake_mute)
+    host, inv, other, admin = (await make_user("h@x.com"), await make_user("i@x.com"), await make_user("o@x.com"),
+                               await make_user("a@x.com", "admin"))
+    m = await make_meeting(host, [inv])
+    hc, ic, oc, ac = await login_as(host), await login_as(inv), await login_as(other), await login_as(admin)
+
+    for c, code in ((ic, 403), (oc, 404), (ac, 403)):
+        r = await c.post(f"/api/meetings/{m.id}/participants/abc123deadbeef/mute", headers=H(c))
+        assert r.status_code == code, c
+
+    r = await hc.post(f"/api/meetings/{m.id}/participants/abc123deadbeef/mute", headers=H(hc))
+    assert r.status_code == 200 and r.json() == {"muted": True}
+    assert calls == [(str(m.room_name), "abc123deadbeef")]
+    actions = [a for (a,) in (await session.execute(select(AuditLog.action))).all()]
+    assert "livekit.mute" in actions
+
+
+async def test_mute_rejects_malformed_identity(login_as, make_user, make_meeting, monkeypatch):
+    _configure_livekit(monkeypatch)
+    host = await make_user("h@x.com")
+    m = await make_meeting(host)
+    c = await login_as(host)
+    # "../etc/passwd" is not even tested here: a slash in a path segment just can't reach this
+    # route at all (FastAPI returns 404 before our handler runs), which is its own safe outcome.
+    for bad in ("a b", "x" * 100):
+        r = await c.post(f"/api/meetings/{m.id}/participants/{bad}/mute", headers=H(c))
+        assert r.status_code == 422, bad
+
+
+async def test_mute_404_when_participant_already_left(login_as, make_user, make_meeting, monkeypatch):
+    _configure_livekit(monkeypatch)
+
+    async def not_found(settings, room_name, identity):
+        from app.services.livekit_tokens import ParticipantNotFound
+
+        raise ParticipantNotFound(identity)
+
+    from app.routers import livekit as livekit_router
+
+    monkeypatch.setattr(livekit_router.livekit_tokens, "mute_participant_microphone", not_found)
+    host = await make_user("h@x.com")
+    m = await make_meeting(host)
+    c = await login_as(host)
+    r = await c.post(f"/api/meetings/{m.id}/participants/goneaway1234/mute", headers=H(c))
+    assert r.status_code == 404

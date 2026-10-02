@@ -72,3 +72,32 @@ async def participants(
     ratelimit.enforce(f"lk_participants:{user.id}", 120, 60)
     meeting, _ = await perm.require_meeting_access(db, user, meeting_id, "join_room")
     return JSONResponse({"participants": participant_names.names_for_room(str(meeting.room_name))})
+
+
+@router.post("/participants/{identity}/mute", response_model=None)
+async def mute_participant(
+    request: Request,
+    meeting_id: uuid.UUID,
+    identity: str,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """Host-only: force-mutes one participant's microphone. The participant can unmute
+    themselves again afterwards - LiveKit does not let the server do that for them."""
+    ratelimit.enforce(f"lk_mute:{user.id}", 60, 60)
+    meeting, _ = await perm.require_meeting_access(db, user, meeting_id, "moderate")
+    _require_livekit()
+    if len(identity) > 64 or not identity.isalnum():
+        raise HTTPException(status_code=422, detail="Invalid participant id.")
+    try:
+        muted = await livekit_tokens.mute_participant_microphone(
+            get_settings(), str(meeting.room_name), identity
+        )
+    except livekit_tokens.ParticipantNotFound:
+        raise perm.not_found() from None
+    await audit.log(
+        db, "livekit.mute", actor=user.id, target_type="meeting", target_id=meeting.id, request=request,
+        details={"identity": identity, "muted": muted},
+    )
+    await db.commit()
+    return JSONResponse({"muted": muted})

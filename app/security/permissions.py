@@ -22,6 +22,7 @@ Action = Literal[
     "join_room",
     "manage_guest_links",
     "record",  # start/stop recording
+    "moderate",  # mute another participant's microphone
     "play_recording",
     "download_recording",
     "delete_recording",
@@ -34,6 +35,7 @@ ALL_ACTIONS: tuple[Action, ...] = (
     "join_room",
     "manage_guest_links",
     "record",
+    "moderate",
     "play_recording",
     "download_recording",
     "delete_recording",

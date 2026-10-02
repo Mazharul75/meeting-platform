@@ -43,3 +43,39 @@ async def close_room(settings: Settings, room_name: str) -> None:
         log.info("could not close LiveKit room (it may already be closed)")
     finally:
         await client.aclose()
+
+
+class ParticipantNotFound(Exception):
+    """The identity is not currently in the room (they may have already left)."""
+
+
+async def mute_participant_microphone(settings: Settings, room_name: str, identity: str) -> bool:
+    """Host-only moderation: force-mutes one participant's microphone.
+
+    LiveKit only allows the *server* to mute a track, never to unmute it - the participant has
+    to unmute themselves. That is deliberate on LiveKit's part (and ours): a host can silence
+    someone, but nothing server-side can secretly turn a stranger's microphone back on.
+
+    Returns True if a microphone track was found and muted, False if the participant has no
+    live microphone track right now (e.g. it was already off).
+    """
+    client = api.LiveKitAPI(settings.livekit_url, settings.livekit_api_key, settings.livekit_api_secret)
+    try:
+        try:
+            participant = await client.room.get_participant(
+                api.RoomParticipantIdentity(room=room_name, identity=identity)
+            )
+        except Exception as exc:  # noqa: BLE001 - the LiveKit SDK raises a generic error for 404s
+            raise ParticipantNotFound(identity) from exc
+        mic = next(
+            (t for t in participant.tracks if t.type == api.TrackType.AUDIO and not t.muted),
+            None,
+        )
+        if mic is None:
+            return False
+        await client.room.mute_published_track(
+            api.MuteRoomTrackRequest(room=room_name, identity=identity, track_sid=mic.sid, muted=True)
+        )
+        return True
+    finally:
+        await client.aclose()
