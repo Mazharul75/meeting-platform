@@ -40,6 +40,17 @@
     </form>
   </aside>
 
+  {% if can_transcript %}
+  <aside id="transcript-panel" class="room-side-panel d-none" aria-label="Meeting transcript">
+    <div class="room-side-panel-head d-flex align-items-center justify-content-between">
+      <strong>Transcript</strong>
+      <button id="btn-transcript-download" type="button" class="btn btn-sm btn-outline-light">Download .txt</button>
+    </div>
+    <div id="transcript-log" class="room-chat-log" aria-live="polite"></div>
+    <p class="text-secondary small px-3 pb-3 mb-0">Generated live in your browser from everyone's microphone - a free preview, not stored on the server yet.</p>
+  </aside>
+  {% endif %}
+
   <footer class="room-controls">
     <button id="btn-mic" class="icon-btn" type="button" aria-pressed="true" aria-label="Mute microphone">
       <svg class="icon"><use id="mic-icon" href="#i-mic"/></svg><span class="lbl">Mute</span>
@@ -60,6 +71,11 @@
       <svg class="icon"><use href="#i-chat"/></svg><span class="lbl">Chat</span>
       <span id="chat-badge" class="room-chat-badge d-none" aria-hidden="true"></span>
     </button>
+    {% if can_transcript %}
+    <button id="btn-transcript" class="icon-btn" type="button" aria-label="Show transcript">
+      <svg class="icon"><use href="#i-doc"/></svg><span class="lbl">Transcript</span>
+    </button>
+    {% endif %}
     {% if can_record %}
     <span class="room-record-group">
       <button id="btn-record" class="btn btn-danger ticks ticks-light" type="button"><svg class="icon"><use id="record-icon" href="#i-record"/></svg><span class="lbl">Start recording</span></button>
