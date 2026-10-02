@@ -256,7 +256,26 @@ button, .btn, select, input[type="checkbox"] { touch-action: manipulation; }
 .room-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 14px 20px; background: rgba(255,255,255,0.04); }
 .room-record-group { display: flex; align-items: center; }
 .room-record-group .form-check-label { color: rgba(255,255,255,0.75); }
-.icon-btn { display: flex; flex-direction: column; align-items: center; gap: 3px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: var(--radius); padding: 8px 14px; font-size: 0.7rem; font-weight: 600; }
+.icon-btn { display: flex; flex-direction: column; align-items: center; gap: 3px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: var(--radius); padding: 8px 14px; font-size: 0.7rem; font-weight: 600; position: relative; }
 .icon-btn:hover { background: rgba(255,255,255,0.12); }
-.icon-btn[aria-pressed="false"] { background: rgba(255,92,92,0.18); border-color: rgba(255,92,92,0.4); color: #ffb3b3; }
+#btn-mic[aria-pressed="false"], #btn-cam[aria-pressed="false"] { background: rgba(255,92,92,0.18); border-color: rgba(255,92,92,0.4); color: #ffb3b3; }
+#btn-hand[aria-pressed="true"], #btn-share[aria-pressed="true"] { background: rgba(255,209,102,0.2); border-color: rgba(255,209,102,0.5); color: #ffd166; }
 .icon-btn .icon { width: 18px; height: 18px; margin-right: 0; }
+
+.room-stage { background: #000; padding: 0 20px; }
+.room-stage video { width: 100%; max-height: 56vh; object-fit: contain; border-radius: var(--radius); display: block; }
+.room-tiles-strip { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important; padding-top: 10px !important; }
+.room-tiles-strip .room-tile { aspect-ratio: 16 / 10; }
+
+.room-side-panel { position: fixed; top: 0; right: 0; bottom: 0; width: 320px; max-width: 90vw; background: #171b36; border-left: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; z-index: 20; }
+.room-side-panel-head { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.room-participant-list { overflow-y: auto; flex: 1; background: transparent; }
+.room-participant-list .list-group-item { background: transparent; color: #fff; border-color: rgba(255,255,255,0.08); }
+.room-chat-log { flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
+.chat-msg { max-width: 85%; background: rgba(255,255,255,0.08); border-radius: var(--radius); padding: 6px 10px; }
+.chat-msg-mine { align-self: flex-end; background: var(--brand); }
+.chat-msg-name { display: block; font-size: 0.7rem; font-weight: 700; opacity: 0.75; }
+.chat-msg-text { font-size: 0.88rem; word-break: break-word; }
+.room-chat-form { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.1); }
+.room-chat-btn { position: relative; }
+.room-chat-badge { position: absolute; top: 2px; right: 6px; width: 9px; height: 9px; border-radius: 50%; background: #ff5c5c; }

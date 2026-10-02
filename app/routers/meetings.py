@@ -459,6 +459,7 @@ async def meeting_room(
                 "tokenUrl": f"/api/meetings/{meeting.id}/livekit-token",
                 "participantsUrl": f"/api/meetings/{meeting.id}/participants",
                 "endUrl": f"/api/meetings/{meeting.id}/end",
+                "muteUrlBase": f"/api/meetings/{meeting.id}/participants",
                 "isHost": role == "host",
             },
         },

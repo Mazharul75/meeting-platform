@@ -18,7 +18,27 @@
     <svg class="icon"><use href="#i-shield"/></svg>This meeting is being recorded. By staying, you consent to being recorded.
   </div>
 
+  <div id="stage-wrap" class="room-stage d-none">
+    <video id="stage-video" autoplay playsinline muted></video>
+  </div>
   <div id="tiles" class="room-tiles" aria-label="Participants"></div>
+
+  <aside id="participants-panel" class="room-side-panel d-none" aria-label="Participants">
+    <div class="room-side-panel-head">
+      <strong>Participants (<span id="participant-count">1</span>)</strong>
+    </div>
+    <ul id="participant-list" class="list-group room-participant-list"></ul>
+  </aside>
+
+  <aside id="chat-panel" class="room-side-panel d-none" aria-label="Meeting chat">
+    <div class="room-side-panel-head"><strong>Chat</strong></div>
+    <div id="chat-log" class="room-chat-log" aria-live="polite"></div>
+    <form id="chat-form" class="room-chat-form">
+      <label for="chat-input" class="visually-hidden">Message</label>
+      <input id="chat-input" type="text" class="form-control" placeholder="Message everyone…" maxlength="2000" autocomplete="off">
+      <button type="submit" class="btn btn-primary">Send</button>
+    </form>
+  </aside>
 
   <footer class="room-controls">
     <button id="btn-mic" class="icon-btn" type="button" aria-pressed="true" aria-label="Mute microphone">
@@ -26,6 +46,19 @@
     </button>
     <button id="btn-cam" class="icon-btn" type="button" aria-pressed="true" aria-label="Turn camera off">
       <svg class="icon"><use id="cam-icon" href="#i-cam"/></svg><span class="lbl">Camera off</span>
+    </button>
+    <button id="btn-hand" class="icon-btn" type="button" aria-pressed="false" aria-label="Raise hand">
+      <svg class="icon"><use href="#i-hand"/></svg><span class="lbl">Raise hand</span>
+    </button>
+    <button id="btn-share" class="icon-btn" type="button" aria-pressed="false" aria-label="Share your screen">
+      <svg class="icon"><use href="#i-screen"/></svg><span class="lbl">Share screen</span>
+    </button>
+    <button id="btn-participants" class="icon-btn" type="button" aria-label="Show participants">
+      <svg class="icon"><use href="#i-users"/></svg><span class="lbl">Participants</span>
+    </button>
+    <button id="btn-chat" class="icon-btn room-chat-btn" type="button" aria-label="Show chat">
+      <svg class="icon"><use href="#i-chat"/></svg><span class="lbl">Chat</span>
+      <span id="chat-badge" class="room-chat-badge d-none" aria-hidden="true"></span>
     </button>
     {% if can_record %}
     <span class="room-record-group">

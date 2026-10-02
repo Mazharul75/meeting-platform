@@ -128,6 +128,7 @@ async def guest_room(request: Request, token: str, name: str = "", db: AsyncSess
                 "tokenUrl": f"/join/{token}/livekit-token?name={display_name}",
                 "participantsUrl": f"/join/{token}/participants",
                 "endUrl": "",
+                "muteUrlBase": "",
                 "isHost": False,
             },
         },
