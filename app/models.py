@@ -152,6 +152,9 @@ class Recording(Base):
     consent_at: Mapped[datetime] = mapped_column(UTCDateTime)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=_now)
     finished_at: Mapped[datetime | None] = mapped_column(UTCDateTime, nullable=True)
+    # none | processing | ready | failed - a free, open-source transcript generated on request.
+    transcript_status: Mapped[str] = mapped_column(String(12), default="none")
+    transcript_text: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     meeting: Mapped[Meeting] = relationship(lazy="joined")
     parts: Mapped[list[RecordingPart]] = relationship(

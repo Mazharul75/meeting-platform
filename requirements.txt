@@ -50,3 +50,14 @@ protobuf==7.36.2
 PyJWT==2.15.0
 types-protobuf==7.35.1.20260906
 yarl==1.25.1
+# Free, open-source meeting transcripts (no third-party API)
+faster-whisper==1.2.1
+ctranslate2==4.8.2
+onnxruntime==1.30.0
+tokenizers==0.23.2
+huggingface-hub==1.33.0
+av==19.0.0
+flatbuffers==25.12.19
+fsspec==2026.9.0
+hf-xet==1.6.0
+tqdm==4.70.1

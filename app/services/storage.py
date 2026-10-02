@@ -50,6 +50,12 @@ class Storage(Protocol):
 
     async def delete(self, paths: list[str]) -> None: ...
 
+    async def get_bytes(self, path: str) -> bytes:
+        """Reads a file's content directly. Used only by the transcript feature, which needs
+        the actual audio - everything else (playback, download) hands the browser a signed
+        link instead."""
+        ...
+
 
 def part_path(meeting_id: object, recording_id: object, part_number: int, mime_type: str) -> str:
     """The server alone decides where a part lives: recordings/{meeting}/{recording}/part-0001.ext"""
@@ -137,6 +143,14 @@ class SupabaseStorage:
         if resp.status_code >= 300:
             raise StorageError(f"could not delete files ({resp.status_code})")
 
+    async def get_bytes(self, path: str) -> bytes:
+        url = f"{self._base}/object/authenticated/{self._obj(path)}"
+        async with httpx.AsyncClient(timeout=60, transport=self._transport) as client:
+            resp = await client.get(url, headers=self._auth)
+        if resp.status_code >= 300:
+            raise StorageError(f"could not read object ({resp.status_code})")
+        return resp.content
+
 
 # ------------------------------------------------------------------------------ local (dev only)
 
@@ -185,6 +199,12 @@ class LocalDevStorage:
         for p in paths:
             self.file_path(p).unlink(missing_ok=True)
 
+    async def get_bytes(self, path: str) -> bytes:
+        target = self.file_path(path)
+        if not target.is_file():
+            raise StorageError("file not found")
+        return target.read_bytes()
+
 
 # ------------------------------------------------------------------------------------- memory
 
@@ -218,6 +238,12 @@ class MemoryStorage:
     async def delete(self, paths: list[str]) -> None:
         for p in paths:
             self.files.pop(p, None)
+
+    async def get_bytes(self, path: str) -> bytes:
+        data = self.files.get(path)
+        if data is None:
+            raise StorageError("file not found")
+        return data
 
 
 # ------------------------------------------------------------------------------------ factory

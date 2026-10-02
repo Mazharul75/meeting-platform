@@ -279,3 +279,4 @@ button, .btn, select, input[type="checkbox"] { touch-action: manipulation; }
 .room-chat-form { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.1); }
 .room-chat-btn { position: relative; }
 .room-chat-badge { position: absolute; top: 2px; right: 6px; width: 9px; height: 9px; border-radius: 50%; background: #ff5c5c; }
+.transcript-text { white-space: pre-wrap; max-height: 320px; overflow-y: auto; background: var(--canvas); border-radius: var(--radius); padding: 12px 14px; }

@@ -46,11 +46,6 @@ class RoomController {
     this.statusEl = statusEl;
     this.names = new Map();
     this.raisedHands = new Set();
-    this.transcript = [];
-    this.transcribing = false;
-    this.recognition = null;
-    this.transcriptionSupported = true;
-    this.onTranscriptEntry = null;
     this.room = null;
     this.recorder = null;
     this.recording = false;
@@ -112,7 +107,6 @@ class RoomController {
     this.room.on(RoomEvent.Reconnecting, () => this.setStatus("Reconnecting..."));
     this.room.on(RoomEvent.Reconnected, () => this.setStatus("Connected"));
     this.room.on(RoomEvent.Disconnected, (reason) => {
-      this.stopTranscription();
       this.setStatus(reason === LK.DisconnectReason.SERVER_SHUTDOWN ? "The meeting was ended" : "Disconnected");
       $("tiles")?.replaceChildren();
       if (window.__roomTest) window.__roomTest.disconnected = true;
@@ -290,9 +284,6 @@ class RoomController {
       if (message.raised) this.raisedHands.add(participant.identity);
       else this.raisedHands.delete(participant.identity);
       this.updateChips(participant);
-    } else if (message.type === "transcript" && typeof message.text === "string") {
-      const name = this.names.get(participant.identity) || "Someone";
-      this.addTranscriptEntry(name, message.text.slice(0, 2000), false);
     }
   }
 
@@ -311,82 +302,6 @@ class RoomController {
     this.sendData({ type: "hand", raised });
     this.updateChips(this.room.localParticipant);
     return raised;
-  }
-
-  // ---- live transcript ----------------------------------------------------------------------
-  // Free, no third-party billing: each browser recognises its OWN microphone with the
-  // standard Web Speech API and broadcasts the finished sentences over the same data channel
-  // as chat. Every participant's browser ends up holding the same merged transcript. Chrome
-  // and Edge only; a browser without it just does not contribute lines (everyone else's still
-  // come through).
-
-  addTranscriptEntry(name, text, mine) {
-    const entry = { name, text, ts: Date.now() };
-    this.transcript.push(entry);
-    this.onTranscriptEntry?.({ ...entry, mine });
-  }
-
-  startTranscription() {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      this.transcriptionSupported = false;
-      return;
-    }
-    this.transcriptionSupported = true;
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = false;
-    recognition.lang = "en-US";
-    recognition.onresult = (event) => {
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const result = event.results[i];
-        if (!result.isFinal) continue;
-        const text = result[0].transcript.trim();
-        if (!text) continue;
-        this.addTranscriptEntry("You", text, true);
-        this.sendData({ type: "transcript", text });
-      }
-    };
-    recognition.onerror = (e) => {
-      if (e.error === "no-speech" || e.error === "aborted") return;
-      console.error("speech recognition error", e.error);
-    };
-    // The browser stops recognition on its own every so often - keep it running for as long
-    // as we are meant to be transcribing.
-    recognition.onend = () => {
-      if (this.transcribing) {
-        try {
-          recognition.start();
-        } catch (_) {
-          /* already starting - ignore */
-        }
-      }
-    };
-    this.recognition = recognition;
-    this.transcribing = true;
-    recognition.start();
-  }
-
-  stopTranscription() {
-    this.transcribing = false;
-    this.recognition?.stop();
-  }
-
-  /** Saves everything transcribed so far - during the meeting or right after - as a plain
-   *  text file, so it can be shown to anyone without needing a server-side store yet. */
-  downloadTranscript() {
-    const lines = this.transcript
-      .slice()
-      .sort((a, b) => a.ts - b.ts)
-      .map((e) => `[${new Date(e.ts).toLocaleTimeString()}] ${e.name}: ${e.text}`);
-    const text = `Transcript\n\n${lines.join("\n")}\n`;
-    const blob = new Blob([text], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `transcript-${this.meetingId}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
   }
 
   // ---- host moderation ---------------------------------------------------------------------
@@ -410,7 +325,6 @@ class RoomController {
 
   async leave() {
     clearTimeout(this._namesTimer);
-    this.stopTranscription();
     if (this.recording) await this.stopRecording();
     await this.room?.disconnect();
   }
@@ -533,16 +447,6 @@ function appendChatMessage({ name, text, mine }) {
   }
 }
 
-function appendTranscriptEntry({ name, text, mine }) {
-  const log = $("transcript-log");
-  if (!log) return;
-  const row = document.createElement("div");
-  row.className = "chat-msg" + (mine ? " chat-msg-mine" : "");
-  row.innerHTML = `<span class="chat-msg-name">${esc(name)}</span><span class="chat-msg-text">${esc(text)}</span>`;
-  log.appendChild(row);
-  log.scrollTop = log.scrollHeight;
-}
-
 function togglePanel(id, otherIds) {
   const panel = $(id);
   if (!panel) return;
@@ -586,10 +490,8 @@ function bindControls(controller) {
       btn.disabled = false;
     }
   });
-  $("btn-participants")?.addEventListener("click", () => togglePanel("participants-panel", ["chat-panel", "transcript-panel"]));
-  $("btn-chat")?.addEventListener("click", () => togglePanel("chat-panel", ["participants-panel", "transcript-panel"]));
-  $("btn-transcript")?.addEventListener("click", () => togglePanel("transcript-panel", ["participants-panel", "chat-panel"]));
-  $("btn-transcript-download")?.addEventListener("click", () => controller.downloadTranscript());
+  $("btn-participants")?.addEventListener("click", () => togglePanel("participants-panel", ["chat-panel"]));
+  $("btn-chat")?.addEventListener("click", () => togglePanel("chat-panel", ["participants-panel"]));
   const chatForm = $("chat-form");
   chatForm?.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -599,7 +501,6 @@ function bindControls(controller) {
   });
   controller.onChatMessage = appendChatMessage;
   controller.onParticipantsChanged = () => renderParticipantPanel(controller);
-  controller.onTranscriptEntry = appendTranscriptEntry;
 
   $("btn-leave").addEventListener("click", async () => {
     $("btn-leave").disabled = true;
@@ -662,14 +563,6 @@ async function init() {
     return;
   }
   controller.recoverLeftoverRecording();
-  controller.startTranscription();
-  if (!controller.transcriptionSupported) {
-    const btn = $("btn-transcript");
-    if (btn) {
-      btn.disabled = true;
-      btn.title = "Live transcript needs Chrome or Edge";
-    }
-  }
 }
 
 if (typeof document !== "undefined") init();

@@ -26,6 +26,7 @@ Action = Literal[
     "play_recording",
     "download_recording",
     "delete_recording",
+    "transcribe",  # generate/view the free transcript - host and admin only
 ]
 
 ALL_ROLES: tuple[Role, ...] = ("admin", "host", "invited", "other", "guest")
@@ -39,6 +40,7 @@ ALL_ACTIONS: tuple[Action, ...] = (
     "play_recording",
     "download_recording",
     "delete_recording",
+    "transcribe",
 )
 
 # role -> set of allowed actions. An admin who is also the host is treated as the host.
@@ -52,6 +54,7 @@ _MATRIX: dict[Role, frozenset[Action]] = {
             "play_recording",
             "download_recording",
             "delete_recording",
+            "transcribe",
         }
     ),
     "host": frozenset(ALL_ACTIONS),

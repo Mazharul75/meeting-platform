@@ -220,3 +220,55 @@ async def test_rate_limit_on_upload_urls(login_as, make_user, make_meeting):
     rid = (await start(c, m)).json()["recording_id"]
     codes = {(await c.post(f"/api/recordings/{rid}/parts/1/upload-url", headers=H(c))).status_code for _ in range(245)}
     assert 429 in codes
+
+
+async def test_transcript_is_free_host_and_admin_only(login_as, make_user, make_meeting, session, storage, monkeypatch):
+    calls = []
+
+    def fake_transcribe(data, suffix):
+        calls.append((data, suffix))
+        return "hello from the fake model"
+
+    from app.routers import recordings as recordings_router
+
+    monkeypatch.setattr(recordings_router.transcription, "transcribe_audio_bytes", fake_transcribe)
+
+    host, inv, other, admin = (await make_user("h@x.com"), await make_user("i@x.com"), await make_user("o@x.com"),
+                               await make_user("a@x.com", "admin"))
+    m = await make_meeting(host, [inv])
+    hc = await login_as(host)
+    rid = (await start(hc, m)).json()["recording_id"]
+    await put_and_complete(hc, session, storage, rid, 1, b"a" * 100, 3000)
+    await put_and_complete(hc, session, storage, rid, 2, b"b" * 100, 3000)
+    await hc.post(f"/api/recordings/{rid}/finish", headers=H(hc), json={"parts_expected": 2})
+    ic, oc, ac = await login_as(inv), await login_as(other), await login_as(admin)
+
+    for c, code in ((ic, 403), (oc, 404)):
+        assert (await c.post(f"/recordings/{rid}/transcript", headers=H(c))).status_code == code
+
+    r = await hc.post(f"/recordings/{rid}/transcript", headers=H(hc))
+    assert r.status_code == 200, r.text
+    assert r.json() == {"status": "ready", "text": "hello from the fake model hello from the fake model"}
+    assert len(calls) == 2  # one call per verified part, in order
+
+    for c, code in ((hc, 200), (ac, 200), (ic, 403), (oc, 404)):
+        g = await c.get(f"/recordings/{rid}/transcript")
+        assert g.status_code == code
+    assert (await hc.get(f"/recordings/{rid}/transcript")).json() == {
+        "status": "ready",
+        "text": "hello from the fake model hello from the fake model",
+    }
+    rec = (await session.execute(select(Recording))).scalar_one()
+    await session.refresh(rec)
+    assert rec.transcript_status == "ready"
+    actions = [a for (a,) in (await session.execute(select(AuditLog.action))).all()]
+    assert "recording.transcript" in actions
+
+
+async def test_transcript_refused_until_a_recording_exists(login_as, make_user, make_meeting, session):
+    host = await make_user("h@x.com")
+    m = await make_meeting(host)
+    c = await login_as(host)
+    rid = (await start(c, m)).json()["recording_id"]
+    r = await c.post(f"/recordings/{rid}/transcript", headers=H(c))
+    assert r.status_code == 409 and r.json() == {"error": "no_recording"}

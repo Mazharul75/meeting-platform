@@ -63,6 +63,7 @@ EXPECTED = {
     "play_recording": dict(admin=1, host=1, invited=1, other=0, guest=0),
     "download_recording": dict(admin=1, host=1, invited=0, other=0, guest=0),
     "delete_recording": dict(admin=1, host=1, invited=0, other=0, guest=0),
+    "transcribe": dict(admin=1, host=1, invited=0, other=0, guest=0),
 }
 
 

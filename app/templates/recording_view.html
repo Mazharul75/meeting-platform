@@ -46,9 +46,34 @@
     {% endfor %}
   </ol>
 </div></div>
+
+{% if can_transcript and recording.status in ['ready', 'partial'] %}
+<div class="card ticks mt-4"><div class="card-body">
+  <h2><svg class="icon"><use href="#i-doc"/></svg>Transcript</h2>
+  <p class="text-secondary small">Free - generated on this server with open-source speech recognition, not sent to any third party.</p>
+  {% if recording.transcript_status == 'ready' %}
+  <div id="transcript-result">
+    <p id="transcript-text" class="transcript-text">{{ recording.transcript_text }}</p>
+    <button id="btn-download-transcript" type="button" class="btn btn-sm btn-outline-secondary"><svg class="icon"><use href="#i-download"/></svg>Download .txt</button>
+  </div>
+  {% else %}
+  <button id="btn-generate-transcript" type="button" class="btn btn-primary btn-sm">Generate transcript</button>
+  <span id="transcript-status" class="text-secondary small ms-2" aria-live="polite">{% if recording.transcript_status == 'failed' %}The last attempt failed - try again.{% endif %}</span>
+  <div id="transcript-result" class="d-none mt-2">
+    <p id="transcript-text" class="transcript-text"></p>
+    <button id="btn-download-transcript" type="button" class="btn btn-sm btn-outline-secondary"><svg class="icon"><use href="#i-download"/></svg>Download .txt</button>
+  </div>
+  {% endif %}
+</div></div>
+<script type="application/json" id="transcript-config">{{ transcript_config | tojson }}</script>
+{% endif %}
+
 <script type="application/json" id="player-config">{{ player_config | tojson }}</script>
 {% elif recording.status not in ['recording', 'uploading', 'failed'] %}
 <div class="empty-state card ticks card-body"><p class="mb-0">There is nothing to play for this recording.</p></div>
 {% endif %}
 {% endblock %}
-{% block scripts %}{% if links %}<script type="module" src="{{ static('js/player.js') }}"></script>{% endif %}{% endblock %}
+{% block scripts %}
+{% if links %}<script type="module" src="{{ static('js/player.js') }}"></script>{% endif %}
+{% if can_transcript and recording.status in ['ready', 'partial'] %}<script type="module" src="{{ static('js/transcript.js') }}"></script>{% endif %}
+{% endblock %}

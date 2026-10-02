@@ -17,7 +17,7 @@ from app.deps import current_user
 from app.models import Meeting, Recording, RecordingPart, User
 from app.security import permissions as perm
 from app.security import ratelimit
-from app.services import audit
+from app.services import audit, transcription
 from app.services import meetings as meeting_svc
 from app.services.storage import EXT_BY_MIME, Storage, StorageError, get_storage, part_path
 from app.templating import templates
@@ -343,6 +343,11 @@ async def recording_view(
             "missing": missing,
             "can_download": perm.is_allowed(role, "download_recording"),
             "can_delete": perm.is_allowed(role, "delete_recording"),
+            "can_transcript": perm.is_allowed(role, "transcribe"),
+            "transcript_config": {
+                "url": f"/recordings/{recording.id}/transcript",
+                "recordingId": str(recording.id),
+            },
             "player_config": {
                 "recordingId": str(recording.id),
                 "parts": links,
@@ -402,6 +407,56 @@ async def part_download(
     )
     await db.commit()
     return RedirectResponse(url, status_code=303)
+
+
+# ----------------------------------------------------------------------------- transcript
+
+
+@router.post("/recordings/{recording_id}/transcript", response_model=None)
+async def generate_transcript(
+    request: Request,
+    recording_id: uuid.UUID,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+    storage: Storage = Depends(get_storage),
+) -> Response:
+    """Host/admin only. Free, open-source transcription (no third-party API) run on the
+    verified recording parts, in order. Runs synchronously - fine for a short meeting."""
+    ratelimit.enforce(f"transcribe:{user.id}", 6, 3600)
+    recording, _, _ = await perm.load_recording_for(db, user, recording_id, "transcribe")
+    if recording.status not in ("ready", "partial"):
+        return _json_error(409, "no_recording")
+    recording.transcript_status = "processing"
+    await db.commit()
+    ext = EXT_BY_MIME[recording.mime_type]
+    pieces: list[str] = []
+    try:
+        for part in sorted(recording.parts, key=lambda p: p.part_number):
+            if part.status != "verified":
+                continue
+            data = await storage.get_bytes(part.storage_path)
+            pieces.append(transcription.transcribe_audio_bytes(data, f".{ext}"))
+    except (StorageError, OSError, RuntimeError) as exc:
+        recording.transcript_status = "failed"
+        await db.commit()
+        raise HTTPException(status_code=503, detail="Could not generate the transcript right now.") from exc
+    recording.transcript_text = " ".join(p for p in pieces if p).strip() or "(no speech detected)"
+    recording.transcript_status = "ready"
+    await audit.log(
+        db, "recording.transcript", actor=user.id, target_type="recording", target_id=recording.id, request=request
+    )
+    await db.commit()
+    return JSONResponse({"status": "ready", "text": recording.transcript_text})
+
+
+@router.get("/recordings/{recording_id}/transcript", response_model=None)
+async def get_transcript(
+    recording_id: uuid.UUID,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    recording, _, _ = await perm.load_recording_for(db, user, recording_id, "transcribe")
+    return JSONResponse({"status": recording.transcript_status, "text": recording.transcript_text})
 
 
 @router.delete("/recordings/{recording_id}", response_model=None)
